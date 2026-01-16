@@ -1,15 +1,17 @@
-// ParkingHistoryActivity.kt
+package com.example.car_park
+
 import android.os.Bundle
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.android.synthetic.main.activity_parking_history.*
+import com.example.car_park.databinding.ActivityParkingHistoryBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class ParkingHistoryActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityParkingHistoryBinding
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var adapter: ParkingHistoryAdapter
     private var userId: Int = 0
@@ -17,7 +19,8 @@ class ParkingHistoryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_parking_history)
+        binding = ActivityParkingHistoryBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
@@ -26,17 +29,17 @@ class ParkingHistoryActivity : AppCompatActivity() {
         userId = sharedPref.getInt("user_id", 0)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             finish()
         }
 
         // Setup RecyclerView
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = ParkingHistoryAdapter { record ->
             // Handle item click
             showRecordDetails(record)
         }
-        recyclerView.adapter = adapter
+        binding.recyclerView.adapter = adapter
 
         // Setup filter spinner
         setupFilterSpinner()
@@ -45,7 +48,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
         loadParkingHistory()
 
         // Setup refresh
-        swipeRefresh.setOnRefreshListener {
+        binding.swipeRefresh.setOnRefreshListener {
             loadParkingHistory()
         }
     }
@@ -54,9 +57,9 @@ class ParkingHistoryActivity : AppCompatActivity() {
         val filterOptions = arrayOf("All Time", "Today", "This Week", "This Month")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, filterOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerFilter.adapter = adapter
+        binding.spinnerFilter.adapter = adapter
 
-        spinnerFilter.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        binding.spinnerFilter.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
                 filterType = when (position) {
                     0 -> "all"
@@ -76,7 +79,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
     }
 
     private fun loadParkingHistory() {
-        swipeRefresh.isRefreshing = true
+        binding.swipeRefresh.isRefreshing = true
 
         val records = when (filterType) {
             "day" -> getTodaysRecords()
@@ -90,7 +93,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
         // Update summary
         updateSummary(records)
 
-        swipeRefresh.isRefreshing = false
+        binding.swipeRefresh.isRefreshing = false
     }
 
     private fun getAllRecords(): List<ParkingRecord> {
@@ -134,13 +137,17 @@ class ParkingHistoryActivity : AppCompatActivity() {
 
         if (cursor.moveToFirst()) {
             do {
+                val durationInt = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COL_DURATION))
+                val amountValue = cursor.getDouble(cursor.getColumnIndex(DatabaseHelper.COL_AMOUNT))
+                val exitTimeValue = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_EXIT_TIME))
+                
                 val record = ParkingRecord(
                     id = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COL_ID)),
                     carNumber = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_CAR_NUMBER)),
                     entryTime = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_ENTRY_TIME)),
-                    exitTime = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_EXIT_TIME)) ?: "",
-                    duration = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COL_DURATION)),
-                    amount = cursor.getDouble(cursor.getColumnIndex(DatabaseHelper.COL_AMOUNT)),
+                    exitTime = exitTimeValue,
+                    duration = durationInt.toString(),
+                    amount = amountValue,
                     status = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_STATUS))
                 )
                 records.add(record)
@@ -151,13 +158,13 @@ class ParkingHistoryActivity : AppCompatActivity() {
     }
 
     private fun updateSummary(records: List<ParkingRecord>) {
-        val totalHours = records.sumBy { it.duration } / 60
-        val totalAmount = records.sumByDouble { it.amount }
+        val totalHours = records.sumOf { (it.duration?.toIntOrNull() ?: 0) } / 60
+        val totalAmount = records.sumOf { it.amount ?: 0.0 }
         val totalRecords = records.size
 
-        tvTotalRecords.text = "$totalRecords records"
-        tvTotalHours.text = "$totalHours hours"
-        tvTotalAmount.text = "₹${"%.2f".format(totalAmount)}"
+        binding.tvTotalRecords.text = "$totalRecords records"
+        binding.tvTotalHours.text = "$totalHours hours"
+        binding.tvTotalAmount.text = "₹${"%.2f".format(totalAmount)}"
     }
 
     private fun showRecordDetails(record: ParkingRecord) {

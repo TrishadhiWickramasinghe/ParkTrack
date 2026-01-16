@@ -1,64 +1,68 @@
-// RatesManagementActivity.kt
+package com.example.car_park
+
 import android.os.Bundle
 import android.text.InputType
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
+import com.example.car_park.databinding.ActivityRatesManagementBinding
+import com.example.car_park.databinding.DialogRateEditBinding
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_rates_management.*
-import kotlinx.android.synthetic.main.dialog_rate_edit.*
-import kotlinx.android.synthetic.main.dialog_rate_edit.view.*
+import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
 class RatesManagementActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityRatesManagementBinding
     private lateinit var dbHelper: DatabaseHelper
     private val rateList = mutableListOf<ParkingRate>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_rates_management)
+        binding = ActivityRatesManagementBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             finish()
         }
 
         // Setup RecyclerView
-        recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         val adapter = RatesAdapter(rateList) { rate ->
             showEditRateDialog(rate)
         }
-        recyclerView.adapter = adapter
+        binding.recyclerView.adapter = adapter
 
         // Load rates
         loadRates()
 
         // Setup buttons
-        btnAddRate.setOnClickListener {
+        binding.btnAddRate.setOnClickListener {
             showAddRateDialog()
         }
 
-        btnAddSpecialRate.setOnClickListener {
+        binding.btnAddSpecialRate.setOnClickListener {
             showAddSpecialRateDialog()
         }
 
-        btnSaveAll.setOnClickListener {
+        binding.btnSaveAll.setOnClickListener {
             saveAllRates()
         }
 
         // Setup refresh
-        swipeRefresh.setOnRefreshListener {
+        binding.swipeRefresh.setOnRefreshListener {
             loadRates()
         }
     }
 
     private fun loadRates() {
-        swipeRefresh.isRefreshing = true
+        binding.swipeRefresh.isRefreshing = true
 
         // Load from database or shared preferences
         val ratesJson = getSharedPreferences("parking_rates", MODE_PRIVATE)
@@ -99,14 +103,14 @@ class RatesManagementActivity : AppCompatActivity() {
                 ))
             }
 
-            (recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
+            (binding.recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
 
         } catch (e: Exception) {
             e.printStackTrace()
             showError("Failed to load rates")
         }
 
-        swipeRefresh.isRefreshing = false
+        binding.swipeRefresh.isRefreshing = false
     }
 
     private fun getDefaultRates(): String {
@@ -153,15 +157,15 @@ class RatesManagementActivity : AppCompatActivity() {
     }
 
     private fun showAddRateDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_rate_edit, null)
+        val dialogBinding = DialogRateEditBinding.inflate(layoutInflater)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Add New Rate")
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setPositiveButton("Save") { _, _ ->
-                val name = dialogView.etRateName.text.toString().trim()
-                val rate = dialogView.etRateValue.text.toString().toDoubleOrNull() ?: 0.0
-                val description = dialogView.etRateDescription.text.toString().trim()
+                val name = dialogBinding.etRateName.text.toString().trim()
+                val rate = dialogBinding.etRateValue.text.toString().toDoubleOrNull() ?: 0.0
+                val description = dialogBinding.etRateDescription.text.toString().trim()
 
                 if (name.isNotEmpty() && rate > 0) {
                     val newRate = ParkingRate(
@@ -175,7 +179,7 @@ class RatesManagementActivity : AppCompatActivity() {
                         endTime = "23:59"
                     )
                     rateList.add(newRate)
-                    (recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
+                    (binding.recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
                     showSuccess("Rate added successfully")
                 } else {
                     showError("Please enter valid details")
@@ -226,7 +230,7 @@ class RatesManagementActivity : AppCompatActivity() {
                 daysOfWeek = days
             )
             rateList.add(newRate)
-            (recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
+            (binding.recyclerView.adapter as RatesAdapter).notifyDataSetChanged()
             showSuccess("Special rate added successfully")
         } else {
             showError("Please enter valid details")
@@ -234,19 +238,19 @@ class RatesManagementActivity : AppCompatActivity() {
     }
 
     private fun showEditRateDialog(rate: ParkingRate) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_rate_edit, null)
+        val dialogBinding = DialogRateEditBinding.inflate(layoutInflater)
 
-        dialogView.etRateName.setText(rate.name)
-        dialogView.etRateValue.setText(rate.rate.toString())
-        dialogView.etRateDescription.setText(rate.description)
+        dialogBinding.etRateName.setText(rate.name)
+        dialogBinding.etRateValue.setText(rate.rate.toString())
+        dialogBinding.etRateDescription.setText(rate.description)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Edit Rate")
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setPositiveButton("Update") { _, _ ->
-                val name = dialogView.etRateName.text.toString().trim()
-                val rateValue = dialogView.etRateValue.text.toString().toDoubleOrNull() ?: 0.0
-                val description = dialogView.etRateDescription.text.toString().trim()
+                val name = dialogBinding.etRateName.text.toString().trim()
+                val rateValue = dialogBinding.etRateValue.text.toString().toDoubleOrNull() ?: 0.0
+                val description = dialogBinding.etRateDescription.text.toString().trim()
 
                 if (name.isNotEmpty() && rateValue > 0) {
                     val index = rateList.indexOfFirst { it.id == rate.id }
@@ -256,7 +260,7 @@ class RatesManagementActivity : AppCompatActivity() {
                             rate = rateValue,
                             description = description
                         )
-                        (recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
+                        (binding.recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
                         showSuccess("Rate updated successfully")
                     }
                 } else {
@@ -278,7 +282,7 @@ class RatesManagementActivity : AppCompatActivity() {
             .setMessage("Are you sure you want to delete '${rate.name}'?")
             .setPositiveButton("Delete") { _, _ ->
                 rateList.removeAll { it.id == rate.id }
-                (recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
+                (binding.recyclerView.adapter as RatesAdapter).submitList(rateList.toList())
                 showSuccess("Rate deleted successfully")
             }
             .setNegativeButton("Cancel", null)
@@ -331,13 +335,13 @@ class RatesManagementActivity : AppCompatActivity() {
     }
 
     private fun showSuccess(message: String) {
-        Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_SHORT)
+        Snackbar.make(binding.coordinatorLayout, message, Snackbar.LENGTH_SHORT)
             .setBackgroundTint(resources.getColor(R.color.green))
             .show()
     }
 
     private fun showError(message: String) {
-        Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_SHORT)
+        Snackbar.make(binding.coordinatorLayout, message, Snackbar.LENGTH_SHORT)
             .setBackgroundTint(resources.getColor(R.color.red))
             .show()
     }

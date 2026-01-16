@@ -1,4 +1,5 @@
-// AdminParkingLogsActivity.kt
+package com.example.car_park
+
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
@@ -8,11 +9,11 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.car_park.databinding.ActivityAdminParkingLogsBinding
 import com.itextpdf.text.*
 import com.itextpdf.text.pdf.PdfPCell
 import com.itextpdf.text.pdf.PdfPTable
 import com.itextpdf.text.pdf.PdfWriter
-import kotlinx.android.synthetic.main.activity_admin_parking_logs.*
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -20,6 +21,7 @@ import java.util.*
 
 class AdminParkingLogsActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityAdminParkingLogsBinding
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var adapter: AdminParkingHistoryAdapter
     private var selectedDate: String? = null
@@ -27,21 +29,22 @@ class AdminParkingLogsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_admin_parking_logs)
+        binding = ActivityAdminParkingLogsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             finish()
         }
 
         // Setup RecyclerView
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = AdminParkingHistoryAdapter { record ->
             showRecordDetails(record)
         }
-        recyclerView.adapter = adapter
+        binding.recyclerView.adapter = adapter
 
         // Setup filters
         setupFilters()
@@ -50,31 +53,31 @@ class AdminParkingLogsActivity : AppCompatActivity() {
         loadParkingLogs()
 
         // Setup buttons
-        btnClearFilters.setOnClickListener {
+        binding.btnClearFilters.setOnClickListener {
             clearFilters()
         }
 
-        btnExportReport.setOnClickListener {
+        binding.btnExportReport.setOnClickListener {
             exportToPDF()
         }
 
-        btnExportExcel.setOnClickListener {
+        binding.btnExportExcel.setOnClickListener {
             exportToExcel()
         }
 
         // Setup refresh
-        swipeRefresh.setOnRefreshListener {
+        binding.swipeRefresh.setOnRefreshListener {
             loadParkingLogs()
         }
     }
 
     private fun setupFilters() {
         // Date filter
-        etDate.setOnClickListener {
+        binding.etDate.setOnClickListener {
             showDatePicker()
         }
 
-        btnPickDate.setOnClickListener {
+        binding.btnPickDate.setOnClickListener {
             showDatePicker()
         }
 
@@ -82,7 +85,7 @@ class AdminParkingLogsActivity : AppCompatActivity() {
         setupVehicleAutoComplete()
 
         // Apply filters button
-        btnApplyFilters.setOnClickListener {
+        binding.btnApplyFilters.setOnClickListener {
             applyFilters()
         }
     }
@@ -93,7 +96,7 @@ class AdminParkingLogsActivity : AppCompatActivity() {
             this,
             { _, year, month, day ->
                 selectedDate = String.format("%04d-%02d-%02d", year, month + 1, day)
-                etDate.setText(selectedDate)
+                binding.etDate.setText(selectedDate)
                 applyFilters()
             },
             calendar.get(Calendar.YEAR),
@@ -104,31 +107,33 @@ class AdminParkingLogsActivity : AppCompatActivity() {
 
     private fun setupVehicleAutoComplete() {
         val vehicles = dbHelper.getAllVehicleNumbers()
-        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, vehicles)
-        (etVehicleNumber as? AutoCompleteTextView)?.setAdapter(adapter)
-
-        etVehicleNumber.setOnItemClickListener { _, _, position, _ ->
+        val autoCompleteAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, vehicles)
+        
+        // Cast to AutoCompleteTextView if possible
+        val autoCompleteView = binding.etVehicleNumber as? android.widget.AutoCompleteTextView
+        autoCompleteView?.setAdapter(autoCompleteAdapter)
+        autoCompleteView?.setOnItemClickListener { _, _, position, _ ->
             selectedVehicle = vehicles[position]
             applyFilters()
         }
     }
 
     private fun applyFilters() {
-        selectedDate = etDate.text.toString().trim().takeIf { it.isNotEmpty() }
-        selectedVehicle = etVehicleNumber.text.toString().trim().takeIf { it.isNotEmpty() }
+        selectedDate = binding.etDate.text.toString().trim().takeIf { it.isNotEmpty() }
+        selectedVehicle = binding.etVehicleNumber.text.toString().trim().takeIf { it.isNotEmpty() }
         loadParkingLogs()
     }
 
     private fun clearFilters() {
-        etDate.text?.clear()
-        etVehicleNumber.text?.clear()
+        binding.etDate.text?.clear()
+        binding.etVehicleNumber.text?.clear()
         selectedDate = null
         selectedVehicle = null
         loadParkingLogs()
     }
 
     private fun loadParkingLogs() {
-        swipeRefresh.isRefreshing = true
+        binding.swipeRefresh.isRefreshing = true
 
         val cursor = dbHelper.getFilteredParkingLogs(selectedDate, selectedVehicle)
         val records = parseCursorToRecords(cursor)
@@ -138,7 +143,7 @@ class AdminParkingLogsActivity : AppCompatActivity() {
         // Update summary
         updateSummary(records)
 
-        swipeRefresh.isRefreshing = false
+        binding.swipeRefresh.isRefreshing = false
     }
 
     private fun parseCursorToRecords(cursor: android.database.Cursor): List<AdminParkingRecord> {
@@ -166,22 +171,22 @@ class AdminParkingLogsActivity : AppCompatActivity() {
 
     private fun updateSummary(records: List<AdminParkingRecord>) {
         val totalRecords = records.size
-        val totalAmount = records.sumByDouble { it.amount }
-        val totalHours = records.sumBy { it.duration } / 60
+        val totalAmount = records.sumOf { it.amount ?: 0.0 }
+        val totalHours = records.sumOf { it.duration ?: 0 } / 60
         val activeParkings = records.count { it.status == "parked" }
 
-        tvTotalRecords.text = "$totalRecords records"
-        tvTotalAmount.text = "₹${"%.2f".format(totalAmount)}"
-        tvTotalHours.text = "$totalHours hours"
-        tvActiveParkings.text = "$activeParkings active"
+        binding.tvTotalRecords.text = "$totalRecords records"
+        binding.tvTotalAmount.text = "₹${"%.2f".format(totalAmount)}"
+        binding.tvTotalHours.text = "$totalHours hours"
+        binding.tvActiveParkings.text = "$activeParkings active"
 
         // Show/hide empty state
         if (records.isEmpty()) {
-            layoutEmptyState.visibility = android.view.View.VISIBLE
-            recyclerView.visibility = android.view.View.GONE
+            binding.layoutEmptyState.visibility = android.view.View.VISIBLE
+            binding.recyclerView.visibility = android.view.View.GONE
         } else {
-            layoutEmptyState.visibility = android.view.View.GONE
-            recyclerView.visibility = android.view.View.VISIBLE
+            binding.layoutEmptyState.visibility = android.view.View.GONE
+            binding.recyclerView.visibility = android.view.View.VISIBLE
         }
     }
 
@@ -239,9 +244,9 @@ class AdminParkingLogsActivity : AppCompatActivity() {
                 table.addCell(record.driverName)
                 table.addCell(record.carNumber)
                 table.addCell(formatTimeForPDF(record.entryTime))
-                table.addCell(if (record.exitTime.isNotEmpty()) formatTimeForPDF(record.exitTime) else "-")
-                table.addCell("${record.duration} min")
-                table.addCell("₹${"%.2f".format(record.amount)}")
+                table.addCell(if (record.exitTime?.isNotEmpty() == true) formatTimeForPDF(record.exitTime) else "-")
+                table.addCell("${record.duration ?: 0} min")
+                table.addCell("₹${"%.2f".format(record.amount ?: 0.0)}")
                 table.addCell(record.status)
             }
 
@@ -249,7 +254,7 @@ class AdminParkingLogsActivity : AppCompatActivity() {
 
             // Add summary
             document.add(Chunk.NEWLINE)
-            val summary = Paragraph("Summary: ${records.size} records, Total: ₹${"%.2f".format(records.sumByDouble { it.amount })}")
+            val summary = Paragraph("Summary: ${records.size} records, Total: ₹${"%.2f".format(records.sumOf { it.amount ?: 0.0 })}")
             document.add(summary)
 
             document.close()
@@ -298,19 +303,6 @@ class AdminParkingLogsActivity : AppCompatActivity() {
     }
 }
 
-// Admin Parking Record
-data class AdminParkingRecord(
-    val id: Int,
-    val driverName: String,
-    val carNumber: String,
-    val entryTime: String,
-    val exitTime: String,
-    val duration: Int,
-    val amount: Double,
-    val status: String,
-    val phone: String
-)
-
 // Admin Record Detail Dialog
 class AdminRecordDetailDialog(
     context: android.content.Context,
@@ -329,12 +321,12 @@ class AdminRecordDetailDialog(
         // Populate data
         findViewById<android.widget.TextView>(R.id.tvDriverName).text = record.driverName
         findViewById<android.widget.TextView>(R.id.tvCarNumber).text = record.carNumber
-        findViewById<android.widget.TextView>(R.id.tvPhone).text = record.phone
+        findViewById<android.widget.TextView>(R.id.tvPhone).text = record.phone ?: "N/A"
         findViewById<android.widget.TextView>(R.id.tvEntryTime).text = formatDateTime(record.entryTime)
         findViewById<android.widget.TextView>(R.id.tvExitTime).text =
-            if (record.exitTime.isNotEmpty()) formatDateTime(record.exitTime) else "Not exited"
-        findViewById<android.widget.TextView>(R.id.tvDuration).text = "${record.duration} minutes"
-        findViewById<android.widget.TextView>(R.id.tvAmount).text = "₹${"%.2f".format(record.amount)}"
+            if (record.exitTime?.isNotEmpty() == true) formatDateTime(record.exitTime) else "Not exited"
+        findViewById<android.widget.TextView>(R.id.tvDuration).text = "${record.duration ?: 0} minutes"
+        findViewById<android.widget.TextView>(R.id.tvAmount).text = "₹${"%.2f".format(record.amount ?: 0.0)}"
         findViewById<android.widget.TextView>(R.id.tvStatus).text = record.status
 
         // Set status color

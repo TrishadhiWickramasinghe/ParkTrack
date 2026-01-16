@@ -2,6 +2,8 @@
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
     // Only add these if you're actually using Firebase
@@ -41,8 +43,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     buildFeatures {
         viewBinding = true
+        dataBinding = false
+    }
+
+    lint {
+        abortOnError = false
     }
 }
 
@@ -52,6 +63,9 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
+    // Kotlin Synthetics (deprecated but still needed for legacy code)
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
@@ -97,6 +111,12 @@ dependencies {
 
     // Swipe Refresh
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
+    // PDF Export (iTextPDF)
+    implementation("com.itextpdf:itextpdf:5.5.13.3")
+
+    // JSON
+    implementation("org.json:json:20230227")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

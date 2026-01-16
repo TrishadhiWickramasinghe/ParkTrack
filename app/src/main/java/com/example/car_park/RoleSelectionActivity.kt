@@ -1,20 +1,25 @@
+package com.example.car_park
+
 // RoleSelectionActivity.kt
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_role_selection.*
+import com.example.car_park.databinding.ActivityRoleSelectionBinding
 
 class RoleSelectionActivity : AppCompatActivity() {
+    
+    private lateinit var binding: ActivityRoleSelectionBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_role_selection)
+        binding = ActivityRoleSelectionBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // Check if user is already logged in
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val isLoggedIn = sharedPref.getBoolean("is_logged_in", false)
-        val role = sharedPref.getString("user_role", "")
+        val role = sharedPref.getString("user_role", "") ?: ""
 
         if (isLoggedIn && role.isNotEmpty()) {
             redirectToDashboard(role)
@@ -22,11 +27,11 @@ class RoleSelectionActivity : AppCompatActivity() {
         }
 
         // Set up click listeners
-        cardDriver.setOnClickListener {
+        binding.cardDriver.setOnClickListener {
             navigateToLogin("driver")
         }
 
-        cardAdmin.setOnClickListener {
+        binding.cardAdmin.setOnClickListener {
             navigateToLogin("admin")
         }
     }
@@ -35,7 +40,7 @@ class RoleSelectionActivity : AppCompatActivity() {
         val intent = Intent(this, LoginActivity::class.java)
         intent.putExtra("role", role)
         startActivity(intent)
-        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
     }
 
     private fun redirectToDashboard(role: String) {

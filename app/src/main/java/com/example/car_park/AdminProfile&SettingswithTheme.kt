@@ -1,23 +1,26 @@
-// AdminSettingsActivity.kt
+package com.example.car_park
+
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import com.example.car_park.databinding.ActivityAdminSettingsBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.android.synthetic.main.activity_admin_settings.*
 
 class AdminSettingsActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityAdminSettingsBinding
     private lateinit var dbHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_admin_settings)
+        binding = ActivityAdminSettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             finish()
         }
 
@@ -25,27 +28,27 @@ class AdminSettingsActivity : AppCompatActivity() {
         loadAdminDetails()
 
         // Setup click listeners
-        layoutChangePassword.setOnClickListener {
+        binding.layoutChangePassword.setOnClickListener {
             showChangePasswordDialog()
         }
 
-        layoutNotifications.setOnClickListener {
+        binding.layoutNotifications.setOnClickListener {
             startActivity(Intent(this, NotificationSettingsActivity::class.java))
         }
 
-        layoutTheme.setOnClickListener {
+        binding.layoutTheme.setOnClickListener {
             showThemeSelector()
         }
 
-        layoutCacheSettings.setOnClickListener {
+        binding.layoutCacheSettings.setOnClickListener {
             showCacheSettings()
         }
 
-        layoutAbout.setOnClickListener {
+        binding.layoutAbout.setOnClickListener {
             showAboutDialog()
         }
 
-        btnLogout.setOnClickListener {
+        binding.btnLogout.setOnClickListener {
             logout()
         }
 
@@ -58,8 +61,8 @@ class AdminSettingsActivity : AppCompatActivity() {
         val adminName = sharedPref.getString("user_name", "")
         val adminEmail = sharedPref.getString("user_email", "")
 
-        tvAdminName.text = adminName
-        tvAdminEmail.text = adminEmail
+        binding.tvAdminName.text = adminName
+        binding.tvAdminEmail.text = adminEmail
 
         // Load additional details from database
         val cursor = dbHelper.getAdminDetails()
@@ -67,8 +70,8 @@ class AdminSettingsActivity : AppCompatActivity() {
             val phone = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_PHONE))
             val createdAt = cursor.getString(cursor.getColumnIndex("created_at"))
 
-            tvAdminPhone.text = phone
-            tvMemberSince.text = "Member since: $createdAt"
+            binding.tvAdminPhone.text = phone
+            binding.tvMemberSince.text = "Member since: $createdAt"
         }
         cursor.close()
     }
@@ -120,7 +123,7 @@ class AdminSettingsActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Select Theme")
             .setSingleChoiceItems(themes, currentTheme) { dialog, which ->
-                setTheme(which)
+                applyTheme(which)
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
@@ -135,7 +138,7 @@ class AdminSettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun setTheme(themeIndex: Int) {
+    private fun applyTheme(themeIndex: Int) {
         val mode = when (themeIndex) {
             0 -> AppCompatDelegate.MODE_NIGHT_NO
             1 -> AppCompatDelegate.MODE_NIGHT_YES
@@ -163,8 +166,8 @@ class AdminSettingsActivity : AppCompatActivity() {
             else -> "Auto (System Default)"
         }
 
-        tvThemeValue.text = themeName
-        ivThemeIcon.setImageResource(
+        binding.tvThemeValue.text = themeName
+        binding.ivThemeIcon.setImageResource(
             if (isDarkMode) R.drawable.ic_dark_mode else R.drawable.ic_light_mode
         )
     }
@@ -258,7 +261,7 @@ class AdminSettingsActivity : AppCompatActivity() {
 
     private fun showSuccess(message: String) {
         com.google.android.material.snackbar.Snackbar.make(
-            coordinatorLayout,
+            binding.coordinatorLayout,
             message,
             com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
         ).setBackgroundTint(resources.getColor(R.color.green)).show()
@@ -266,7 +269,7 @@ class AdminSettingsActivity : AppCompatActivity() {
 
     private fun showError(message: String) {
         com.google.android.material.snackbar.Snackbar.make(
-            coordinatorLayout,
+            binding.coordinatorLayout,
             message,
             com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
         ).setBackgroundTint(resources.getColor(R.color.red)).show()

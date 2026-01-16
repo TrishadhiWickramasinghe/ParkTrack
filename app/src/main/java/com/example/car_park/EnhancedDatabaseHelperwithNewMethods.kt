@@ -1,5 +1,42 @@
+package com.example.car_park
+
+import android.content.Context
+import android.content.ContentValues
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+import java.text.SimpleDateFormat
+import java.util.*
+
 // DatabaseHelper.kt - Additional Methods
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    companion object {
+        const val DATABASE_NAME = "CarParkDB"
+        const val DATABASE_VERSION = 1
+        
+        // Table names
+        const val TABLE_USERS = "users"
+        const val TABLE_PARKING = "parking"
+        const val TABLE_RATES = "rates"
+        const val TABLE_NOTIFICATIONS = "notifications"
+        
+        // Common column names
+        const val COL_ID = "id"
+        const val COL_NAME = "name"
+        const val COL_PASSWORD = "password"
+        const val COL_ROLE = "role"
+        const val COL_PHONE = "phone"
+        
+        // Parking table columns
+        const val COL_USER_ID = "user_id"
+        const val COL_CAR_NUMBER = "car_number"
+        const val COL_ENTRY_TIME = "entry_time"
+        const val COL_EXIT_TIME = "exit_time"
+        const val COL_DURATION = "duration"
+        const val COL_AMOUNT = "amount"
+        const val COL_STATUS = "status"
+    }
 
     // ... Previous code ...
 
@@ -196,21 +233,293 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         )
     }
 
-    // Add notification table in onCreate
+    // Helper method to get current date/time
+    fun getCurrentDateTime(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return sdf.format(Date())
+    }
+
+    // Method to get current parking for a specific car
+    fun getCurrentParkingForCar(carNumber: String): Cursor {
+        val db = readableDatabase
+        return db.query(
+            TABLE_PARKING,
+            null,
+            "$COL_CAR_NUMBER = ? AND $COL_STATUS = ?",
+            arrayOf(carNumber, "parked"),
+            null, null, null, "1"
+        )
+    }
+
+    // Method to add a parking entry
+    fun addParkingEntry(userId: Int, carNumber: String): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COL_USER_ID, userId)
+            put(COL_CAR_NUMBER, carNumber)
+            put(COL_ENTRY_TIME, getCurrentDateTime())
+            put(COL_STATUS, "parked")
+        }
+        return db.insert(TABLE_PARKING, null, values)
+    }
+
+    // Method to update parking exit
+    fun updateParkingExit(parkingId: Long, amount: Double) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COL_EXIT_TIME, getCurrentDateTime())
+            put(COL_AMOUNT, amount)
+            put(COL_STATUS, "exited")
+        }
+        db.update(TABLE_PARKING, values, "$COL_ID = ?", arrayOf(parkingId.toString()))
+    }
+
+    // Method to get parking duration
+    fun getParkingDuration(parkingId: Long): Cursor {
+        val db = readableDatabase
+        return db.rawQuery(
+            """
+            SELECT 
+                $COL_ENTRY_TIME,
+                $COL_EXIT_TIME,
+                CAST((julianday($COL_EXIT_TIME) - julianday($COL_ENTRY_TIME)) * 24 * 60 AS INTEGER) as duration_minutes
+            FROM $TABLE_PARKING
+            WHERE $COL_ID = ?
+            """.trimIndent(),
+            arrayOf(parkingId.toString())
+        )
+    }
+
+    // Method to get current parking for a user
+    fun getCurrentParking(userId: Int): Cursor {
+        val db = readableDatabase
+        return db.query(
+            TABLE_PARKING,
+            null,
+            "$COL_USER_ID = ? AND $COL_STATUS = ?",
+            arrayOf(userId.toString(), "parked"),
+            null, null,
+            "$COL_ENTRY_TIME DESC",
+            "1"
+        )
+    }
+
+    // Method to get daily parking data (returns Cursor for lists)
+    fun getDailyParkingData(userId: Int, date: String): Cursor {
+        val db = readableDatabase
+        return db.rawQuery(
+            """
+            SELECT 
+                $COL_ID,
+                $COL_CAR_NUMBER,
+                $COL_ENTRY_TIME,
+                $COL_EXIT_TIME,
+                $COL_DURATION,
+                $COL_AMOUNT,
+                $COL_STATUS
+            FROM $TABLE_PARKING
+            WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) = ?
+            ORDER BY $COL_ENTRY_TIME DESC
+            """.trimIndent(),
+            arrayOf(userId.toString(), date)
+        )
+    }
+
+    // Method to get daily parking stats (returns DailyParkingData)
+    fun getDailyParkingStats(userId: Int, date: String): DailyParkingData {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            """
+            SELECT 
+                COALESCE(SUM($COL_DURATION), 0) as total_minutes,
+                COALESCE(SUM($COL_AMOUNT), 0.0) as total_amount
+            FROM $TABLE_PARKING
+            WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) = ?
+            """.trimIndent(),
+            arrayOf(userId.toString(), date)
+        )
+
+        var totalMinutes = 0
+        var totalAmount = 0.0
+        if (cursor.moveToFirst()) {
+            totalMinutes = cursor.getInt(0)
+            totalAmount = cursor.getDouble(1)
+        }
+        cursor.close()
+        return DailyParkingData(totalMinutes, totalAmount)
+    }
+
+    // Method to get monthly parking data (returns Cursor for lists)
+    fun getMonthlyParkingData(userId: Int, month: Int, year: Int): Cursor {
+        val db = readableDatabase
+        return db.rawQuery(
+            """
+            SELECT 
+                $COL_ID,
+                $COL_CAR_NUMBER,
+                $COL_ENTRY_TIME,
+                $COL_EXIT_TIME,
+                $COL_DURATION,
+                $COL_AMOUNT,
+                $COL_STATUS
+            FROM $TABLE_PARKING
+            WHERE $COL_USER_ID = ? 
+                AND strftime('%m', $COL_ENTRY_TIME) = ?
+                AND strftime('%Y', $COL_ENTRY_TIME) = ?
+            ORDER BY $COL_ENTRY_TIME DESC
+            """.trimIndent(),
+            arrayOf(userId.toString(), month.toString().padStart(2, '0'), year.toString())
+        )
+    }
+
+    // Method to get monthly parking stats (returns MonthlyParkingData)
+    fun getMonthlyParkingStats(userId: Int, month: Int, year: Int): MonthlyParkingData {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            """
+            SELECT 
+                COALESCE(SUM($COL_DURATION), 0) as total_minutes,
+                COALESCE(SUM($COL_AMOUNT), 0.0) as total_amount
+            FROM $TABLE_PARKING
+            WHERE $COL_USER_ID = ? 
+                AND strftime('%m', $COL_ENTRY_TIME) = ?
+                AND strftime('%Y', $COL_ENTRY_TIME) = ?
+            """.trimIndent(),
+            arrayOf(userId.toString(), month.toString().padStart(2, '0'), year.toString())
+        )
+
+        var totalMinutes = 0
+        var totalAmount = 0.0
+        if (cursor.moveToFirst()) {
+            totalMinutes = cursor.getInt(0)
+            totalAmount = cursor.getDouble(1)
+        }
+        cursor.close()
+        
+        val totalHours = totalMinutes / 60.0
+        val paymentStatus = if (totalAmount > 0) "Paid" else "Pending"
+        
+        return MonthlyParkingData(totalHours, totalAmount, paymentStatus)
+    }
+
+    // Method to get daily income for last 7 days
+    fun getDailyIncomeForLast7Days(): Map<String, Double> {
+        val db = readableDatabase
+        val result = mutableMapOf<String, Double>()
+        val cursor = db.rawQuery(
+            """
+            SELECT DATE($COL_ENTRY_TIME) as date, SUM($COL_AMOUNT) as total
+            FROM $TABLE_PARKING
+            WHERE DATE($COL_ENTRY_TIME) >= DATE('now', '-7 days')
+            AND $COL_STATUS = 'exited'
+            GROUP BY DATE($COL_ENTRY_TIME)
+            ORDER BY DATE($COL_ENTRY_TIME)
+            """.trimIndent(),
+            null
+        )
+        
+        if (cursor.moveToFirst()) {
+            do {
+                val date = cursor.getString(0)
+                val total = cursor.getDouble(1)
+                result[date] = total
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return result
+    }
+
+    // Method to get monthly income for last 6 months
+    fun getMonthlyIncomeForLast6Months(): Map<String, Double> {
+        val db = readableDatabase
+        val result = mutableMapOf<String, Double>()
+        val cursor = db.rawQuery(
+            """
+            SELECT strftime('%Y-%m', $COL_ENTRY_TIME) as month, SUM($COL_AMOUNT) as total
+            FROM $TABLE_PARKING
+            WHERE DATE($COL_ENTRY_TIME) >= DATE('now', '-6 months')
+            AND $COL_STATUS = 'exited'
+            GROUP BY strftime('%Y-%m', $COL_ENTRY_TIME)
+            ORDER BY strftime('%Y-%m', $COL_ENTRY_TIME)
+            """.trimIndent(),
+            null
+        )
+        
+        if (cursor.moveToFirst()) {
+            do {
+                val month = cursor.getString(0)
+                val total = cursor.getDouble(1)
+                result[month] = total
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return result
+    }
+
+    // Method to get parking count by hour of day
+    fun getParkingCountByHour(): Map<Int, Int> {
+        val db = readableDatabase
+        val result = mutableMapOf<Int, Int>()
+        val cursor = db.rawQuery(
+            """
+            SELECT CAST(strftime('%H', $COL_ENTRY_TIME) AS INTEGER) as hour, COUNT(*) as count
+            FROM $TABLE_PARKING
+            GROUP BY CAST(strftime('%H', $COL_ENTRY_TIME) AS INTEGER)
+            ORDER BY hour
+            """.trimIndent(),
+            null
+        )
+        
+        if (cursor.moveToFirst()) {
+            do {
+                val hour = cursor.getInt(0)
+                val count = cursor.getInt(1)
+                result[hour] = count
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        return result
+    }
+
+    // Create database tables
     override fun onCreate(db: SQLiteDatabase) {
-        // ... Previous table creation ...
+        // Create users table
+        val createUsersTable = """
+            CREATE TABLE $TABLE_USERS (
+                $COL_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_NAME TEXT,
+                $COL_PASSWORD TEXT,
+                $COL_ROLE TEXT,
+                $COL_PHONE TEXT
+            )
+        """.trimIndent()
+        
+        // Create parking table  
+        val createParkingTable = """
+            CREATE TABLE $TABLE_PARKING (
+                $COL_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_USER_ID INTEGER,
+                $COL_CAR_NUMBER TEXT,
+                $COL_ENTRY_TIME DATETIME,
+                $COL_EXIT_TIME DATETIME,
+                $COL_DURATION INTEGER,
+                $COL_AMOUNT REAL,
+                $COL_STATUS TEXT,
+                FOREIGN KEY ($COL_USER_ID) REFERENCES $TABLE_USERS($COL_ID)
+            )
+        """.trimIndent()
 
         // Create notifications table
         val createNotificationsTable = """
-            CREATE TABLE notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE $TABLE_NOTIFICATIONS (
+                $COL_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 title TEXT,
                 message TEXT,
                 type TEXT,
                 is_read INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COL_ID)
             )
         """.trimIndent()
 
@@ -223,9 +532,71 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             )
         """.trimIndent()
 
+        db.execSQL(createUsersTable)
+        db.execSQL(createParkingTable)
         db.execSQL(createNotificationsTable)
         db.execSQL(createParkingRatesTable)
+    }
 
-        // ... Rest of onCreate ...
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // Handle database upgrades
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_PARKING")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_USERS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS")
+        db.execSQL("DROP TABLE IF EXISTS parking_rates")
+        onCreate(db)
+    }
+
+    // Get all parking history for a user
+    fun getParkingHistory(userId: Int): Cursor {
+        val db = readableDatabase
+        return db.query(
+            TABLE_PARKING,
+            null,
+            "$COL_USER_ID = ?",
+            arrayOf(userId.toString()),
+            null, null,
+            "$COL_ENTRY_TIME DESC"
+        )
+    }
+
+    // Get parking history by date
+    fun getParkingHistoryByDate(userId: Int, date: String): Cursor {
+        val db = readableDatabase
+        return db.rawQuery(
+            """
+            SELECT *
+            FROM $TABLE_PARKING
+            WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) = ?
+            ORDER BY $COL_ENTRY_TIME DESC
+            """.trimIndent(),
+            arrayOf(userId.toString(), date)
+        )
+    }
+
+    // Get parking history by date range
+    fun getParkingHistoryByDateRange(userId: Int, startDate: String, endDate: String): Cursor {
+        val db = readableDatabase
+        return db.rawQuery(
+            """
+            SELECT *
+            FROM $TABLE_PARKING
+            WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) BETWEEN ? AND ?
+            ORDER BY $COL_ENTRY_TIME DESC
+            """.trimIndent(),
+            arrayOf(userId.toString(), startDate, endDate)
+        )
     }
 }
+
+// Data classes for parking stats
+data class DailyParkingData(
+    val totalMinutes: Int,
+    val totalAmount: Double
+)
+
+data class MonthlyParkingData(
+    val totalHours: Double,
+    val totalAmount: Double,
+    val paymentStatus: String
+)

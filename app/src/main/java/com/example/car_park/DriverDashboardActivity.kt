@@ -1,14 +1,16 @@
-// DriverDashboardActivity.kt
+package com.example.car_park
+
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_driver_dashboard.*
+import com.example.car_park.databinding.ActivityDriverDashboardBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class DriverDashboardActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityDriverDashboardBinding
     private lateinit var dbHelper: DatabaseHelper
     private var userId: Int = 0
     private var userName: String = ""
@@ -16,7 +18,8 @@ class DriverDashboardActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_driver_dashboard)
+        binding = ActivityDriverDashboardBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
@@ -27,8 +30,8 @@ class DriverDashboardActivity : AppCompatActivity() {
         carNumber = sharedPref.getString("car_number", "") ?: ""
 
         // Set user info
-        tvUserName.text = userName
-        tvCarNumber.text = "Car: $carNumber"
+        binding.tvUserName.text = userName
+        binding.tvCarNumber.text = "Car: $carNumber"
 
         // Load parking status
         loadParkingStatus()
@@ -37,27 +40,27 @@ class DriverDashboardActivity : AppCompatActivity() {
         loadTodayStats()
 
         // Setup click listeners
-        btnScanNow.setOnClickListener {
+        binding.btnScanNow.setOnClickListener {
             startActivity(Intent(this, ScanActivity::class.java))
         }
 
-        btnParkingHistory.setOnClickListener {
+        binding.btnParkingHistory.setOnClickListener {
             startActivity(Intent(this, ParkingHistoryActivity::class.java))
         }
 
-        btnDailyCharge.setOnClickListener {
+        binding.btnDailyCharge.setOnClickListener {
             startActivity(Intent(this, DailyChargeActivity::class.java))
         }
 
-        btnMonthlyBill.setOnClickListener {
+        binding.btnMonthlyBill.setOnClickListener {
             startActivity(Intent(this, MonthlyPaymentActivity::class.java))
         }
 
-        btnProfile.setOnClickListener {
+        binding.btnProfile.setOnClickListener {
             startActivity(Intent(this, DriverProfileActivity::class.java))
         }
 
-        btnLogout.setOnClickListener {
+        binding.btnLogout.setOnClickListener {
             logout()
         }
 
@@ -76,9 +79,9 @@ class DriverDashboardActivity : AppCompatActivity() {
 
         if (cursor.moveToFirst()) {
             // Vehicle is currently parked
-            tvParkingStatus.text = "PARKED"
-            tvParkingStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark))
-            layoutParkingStatus.setBackgroundResource(R.drawable.bg_status_parked)
+            binding.tvParkingStatus.text = "PARKED"
+            binding.tvParkingStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark))
+            binding.layoutParkingStatus.setBackgroundResource(R.drawable.bg_status_parked)
 
             val entryTime = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COL_ENTRY_TIME))
             updateParkingDuration(entryTime)
@@ -87,10 +90,10 @@ class DriverDashboardActivity : AppCompatActivity() {
             startParkingTimer(entryTime)
         } else {
             // Vehicle is not parked
-            tvParkingStatus.text = "NOT PARKED"
-            tvParkingStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
-            layoutParkingStatus.setBackgroundResource(R.drawable.bg_status_not_parked)
-            tvParkingDuration.text = "0h 0m"
+            binding.tvParkingStatus.text = "NOT PARKED"
+            binding.tvParkingStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
+            binding.layoutParkingStatus.setBackgroundResource(R.drawable.bg_status_not_parked)
+            binding.tvParkingDuration.text = "0h 0m"
         }
         cursor.close()
     }
@@ -99,9 +102,9 @@ class DriverDashboardActivity : AppCompatActivity() {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val today = sdf.format(Date())
 
-        val dailyData = dbHelper.getDailyParkingData(userId, today)
-        tvTodayHours.text = formatDuration(dailyData.totalMinutes)
-        tvTodayCharge.text = "₹${"%.2f".format(dailyData.totalAmount)}"
+        val dailyData = dbHelper.getDailyParkingStats(userId, today)
+        binding.tvTodayHours.text = formatDuration(dailyData.totalMinutes)
+        binding.tvTodayCharge.text = "₹${"%.2f".format(dailyData.totalAmount)}"
 
         // Calculate hourly rate
         val hourlyRate = if (dailyData.totalMinutes > 0) {
@@ -109,7 +112,7 @@ class DriverDashboardActivity : AppCompatActivity() {
         } else {
             20.0 // Default rate
         }
-        tvHourlyRate.text = "₹${"%.2f".format(hourlyRate)}/hour"
+        binding.tvHourlyRate.text = "₹${"%.2f".format(hourlyRate)}/hour"
     }
 
     private fun updateParkingDuration(entryTime: String) {
@@ -124,9 +127,9 @@ class DriverDashboardActivity : AppCompatActivity() {
             val hours = minutes / 60
             val remainingMinutes = minutes % 60
 
-            tvParkingDuration.text = "${hours}h ${remainingMinutes}m"
+            binding.tvParkingDuration.text = "${hours}h ${remainingMinutes}m"
         } catch (e: Exception) {
-            tvParkingDuration.text = "0h 0m"
+            binding.tvParkingDuration.text = "0h 0m"
         }
     }
 
@@ -142,14 +145,10 @@ class DriverDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupBottomNavigation() {
-        bottomNavigation.setOnNavigationItemSelectedListener { item ->
+        binding.bottomNavigation.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
                     // Already on home
-                    true
-                }
-                R.id.nav_history -> {
-                    startActivity(Intent(this, ParkingHistoryActivity::class.java))
                     true
                 }
                 R.id.nav_scan -> {
@@ -158,10 +157,6 @@ class DriverDashboardActivity : AppCompatActivity() {
                 }
                 R.id.nav_payments -> {
                     startActivity(Intent(this, MonthlyPaymentActivity::class.java))
-                    true
-                }
-                R.id.nav_profile -> {
-                    startActivity(Intent(this, DriverProfileActivity::class.java))
                     true
                 }
                 else -> false
@@ -181,7 +176,3 @@ class DriverDashboardActivity : AppCompatActivity() {
 }
 
 // Data class for daily stats
-data class DailyParkingData(
-    val totalMinutes: Int,
-    val totalAmount: Double
-)

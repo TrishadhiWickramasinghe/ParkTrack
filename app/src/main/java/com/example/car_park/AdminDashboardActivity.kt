@@ -1,23 +1,26 @@
-// AdminDashboardActivity.kt
+package com.example.car_park
+
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_admin_dashboard.*
+import com.example.car_park.databinding.ActivityAdminDashboardBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class AdminDashboardActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityAdminDashboardBinding
     private lateinit var dbHelper: DatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_admin_dashboard)
+        binding = ActivityAdminDashboardBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             // Open navigation drawer or logout
         }
 
@@ -25,24 +28,24 @@ class AdminDashboardActivity : AppCompatActivity() {
         loadDashboardStats()
 
         // Setup click listeners for quick actions
-        cardParkedVehicles.setOnClickListener {
+        binding.cardParkedVehicles.setOnClickListener {
             startActivity(Intent(this, VehicleMonitorActivity::class.java))
         }
 
-        cardManageDrivers.setOnClickListener {
+        binding.cardManageDrivers.setOnClickListener {
             startActivity(Intent(this, DriverManagementActivity::class.java))
         }
 
-        cardParkingLogs.setOnClickListener {
+        binding.cardParkingLogs.setOnClickListener {
             startActivity(Intent(this, AdminParkingLogsActivity::class.java))
         }
 
-        cardManageRates.setOnClickListener {
+        binding.cardManageRates.setOnClickListener {
             startActivity(Intent(this, RatesManagementActivity::class.java))
         }
 
         // Setup bottom navigation
-        bottomNavigation.setOnNavigationItemSelectedListener { item ->
+        binding.bottomNavigation.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_dashboard -> {
                     // Already on dashboard
@@ -77,38 +80,38 @@ class AdminDashboardActivity : AppCompatActivity() {
     private fun loadDashboardStats() {
         // Load current parked vehicles
         val parkedVehicles = dbHelper.getCurrentParkedVehiclesCount()
-        tvParkedVehicles.text = parkedVehicles.toString()
+        binding.tvParkedVehicles.text = parkedVehicles.toString()
 
         // Load today's vehicles
         val todayVehicles = dbHelper.getTodaysVehiclesCount()
-        tvTodayVehicles.text = todayVehicles.toString()
+        binding.tvTodayVehicles.text = todayVehicles.toString()
 
         // Load today's income
         val todayIncome = dbHelper.getTodaysIncome()
-        tvTodayIncome.text = "₹${"%.2f".format(todayIncome)}"
+        binding.tvTodayIncome.text = "₹${"%.2f".format(todayIncome)}"
 
         // Load monthly income
         val monthlyIncome = dbHelper.getMonthlyIncome()
-        tvMonthlyIncome.text = "₹${"%.2f".format(monthlyIncome)}"
+        binding.tvMonthlyIncome.text = "₹${"%.2f".format(monthlyIncome)}"
 
         // Load parking slots
         val totalSlots = 100 // Example
         val availableSlots = totalSlots - parkedVehicles
-        tvAvailableSlots.text = "$availableSlots/$totalSlots"
+        binding.tvAvailableSlots.text = "$availableSlots/$totalSlots"
 
         // Update parking availability indicator
         val availabilityPercent = (availableSlots * 100) / totalSlots
-        progressAvailability.progress = availabilityPercent
+        binding.progressAvailability.progress = availabilityPercent
 
         if (availabilityPercent < 20) {
-            tvAvailabilityStatus.text = "FULL"
-            tvAvailabilityStatus.setTextColor(resources.getColor(R.color.red))
+            binding.tvAvailabilityStatus.text = "FULL"
+            binding.tvAvailabilityStatus.setTextColor(resources.getColor(R.color.red))
         } else if (availabilityPercent < 50) {
-            tvAvailabilityStatus.text = "LIMITED"
-            tvAvailabilityStatus.setTextColor(resources.getColor(R.color.orange))
+            binding.tvAvailabilityStatus.text = "LIMITED"
+            binding.tvAvailabilityStatus.setTextColor(resources.getColor(R.color.orange))
         } else {
-            tvAvailabilityStatus.text = "AVAILABLE"
-            tvAvailabilityStatus.setTextColor(resources.getColor(R.color.green))
+            binding.tvAvailabilityStatus.text = "AVAILABLE"
+            binding.tvAvailabilityStatus.setTextColor(resources.getColor(R.color.green))
         }
     }
 }

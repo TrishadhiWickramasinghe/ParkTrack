@@ -1,17 +1,20 @@
-// ScanActivity.kt
+package com.example.car_park
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.car_park.databinding.ActivityScanBinding
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
-import kotlinx.android.synthetic.main.activity_scan.*
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -19,6 +22,7 @@ import java.util.concurrent.Executors
 
 class ScanActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityScanBinding
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var dbHelper: DatabaseHelper
@@ -32,7 +36,8 @@ class ScanActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_scan)
+        binding = ActivityScanBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
@@ -47,12 +52,12 @@ class ScanActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         // Setup click listeners
-        btnSwitchMode.setOnClickListener {
+        binding.btnSwitchMode.setOnClickListener {
             switchScanMode()
         }
 
-        btnManualEntry.setOnClickListener {
-            val carNumber = etCarNumber.text.toString().trim()
+        binding.btnManualEntry.setOnClickListener {
+            val carNumber = binding.etCarNumber.text.toString().trim()
             if (carNumber.isNotEmpty()) {
                 processCarNumber(carNumber)
             } else {
@@ -60,7 +65,7 @@ class ScanActivity : AppCompatActivity() {
             }
         }
 
-        btnBack.setOnClickListener {
+        binding.btnBack.setOnClickListener {
             finish()
         }
 
@@ -108,7 +113,7 @@ class ScanActivity : AppCompatActivity() {
             val preview = Preview.Builder()
                 .build()
                 .also {
-                    it.setSurfaceProvider(viewFinder.surfaceProvider)
+                    it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
                 }
 
             val imageAnalyzer = ImageAnalysis.Builder()
@@ -191,8 +196,8 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun processCarNumber(carNumber: String) {
-        tvScannedCarNumber.text = carNumber
-        tvScanTime.text = getCurrentDateTime()
+        binding.tvScannedCarNumber.text = carNumber
+        binding.tvScanTime.text = getCurrentDateTime()
 
         val currentParking = dbHelper.getCurrentParkingForCar(carNumber)
 
@@ -212,12 +217,12 @@ class ScanActivity : AppCompatActivity() {
 
         if (entryId != -1L) {
             currentParkingId = entryId.toInt()
-            tvScanStatus.text = "VEHICLE ENTERED"
-            tvScanStatus.setTextColor(ContextCompat.getColor(this, R.color.green))
-            layoutScanStatus.setBackgroundResource(R.drawable.bg_status_success)
+            binding.tvScanStatus.text = "VEHICLE ENTERED"
+            binding.tvScanStatus.setTextColor(ContextCompat.getColor(this, R.color.green))
+            binding.layoutScanStatus.setBackgroundResource(R.drawable.bg_status_success)
 
             // Update UI
-            btnSwitchMode.text = "Switch to EXIT Mode"
+            binding.btnSwitchMode.text = "Switch to EXIT Mode"
 
             // Show success animation
             showSuccessAnimation()
@@ -228,20 +233,20 @@ class ScanActivity : AppCompatActivity() {
 
     private fun processVehicleExit(parkingId: Int, carNumber: String) {
         // Calculate amount (example: $2 per hour)
-        val amount = calculateParkingAmount(parkingId)
+        val amount = calculateParkingAmount(parkingId.toLong())
 
-        dbHelper.updateParkingExit(parkingId, amount)
+        dbHelper.updateParkingExit(parkingId.toLong(), amount)
 
-        tvScanStatus.text = "VEHICLE EXITED"
-        tvScanStatus.setTextColor(ContextCompat.getColor(this, R.color.red))
-        layoutScanStatus.setBackgroundResource(R.drawable.bg_status_exit)
+        binding.tvScanStatus.text = "VEHICLE EXITED"
+        binding.tvScanStatus.setTextColor(ContextCompat.getColor(this, R.color.red))
+        binding.layoutScanStatus.setBackgroundResource(R.drawable.bg_status_exit)
 
         // Show amount
-        tvScanAmount.text = "Amount: ₹${"%.2f".format(amount)}"
-        tvScanAmount.visibility = View.VISIBLE
+        binding.tvScanAmount.text = "Amount: ₹${"%.2f".format(amount)}"
+        binding.tvScanAmount.visibility = View.VISIBLE
 
         // Update UI
-        btnSwitchMode.text = "Switch to ENTRY Mode"
+        binding.btnSwitchMode.text = "Switch to ENTRY Mode"
 
         // Show exit animation
         showExitAnimation()
@@ -250,7 +255,7 @@ class ScanActivity : AppCompatActivity() {
         currentParkingId = -1
     }
 
-    private fun calculateParkingAmount(parkingId: Int): Double {
+    private fun calculateParkingAmount(parkingId: Long): Double {
         val cursor = dbHelper.getParkingDuration(parkingId)
         var amount = 0.0
 
@@ -272,9 +277,9 @@ class ScanActivity : AppCompatActivity() {
             // Check if vehicle is parked
             val cursor = dbHelper.getCurrentParking(userId)
             if (cursor.moveToFirst()) {
-                btnSwitchMode.text = "Switch to EXIT Mode"
+                binding.btnSwitchMode.text = "Switch to EXIT Mode"
             } else {
-                btnSwitchMode.text = "Switch to ENTRY Mode"
+                binding.btnSwitchMode.text = "Switch to ENTRY Mode"
             }
             cursor.close()
         }
@@ -284,9 +289,9 @@ class ScanActivity : AppCompatActivity() {
         val cursor = dbHelper.getCurrentParking(userId)
         if (cursor.moveToFirst()) {
             currentParkingId = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COL_ID))
-            btnSwitchMode.text = "Switch to EXIT Mode"
+            binding.btnSwitchMode.text = "Switch to EXIT Mode"
         } else {
-            btnSwitchMode.text = "Switch to ENTRY Mode"
+            binding.btnSwitchMode.text = "Switch to ENTRY Mode"
         }
         cursor.close()
     }
@@ -298,14 +303,14 @@ class ScanActivity : AppCompatActivity() {
 
     private fun showSuccessAnimation() {
         // You can add Lottie animation here
-        animationView.setAnimation(R.raw.success_animation)
-        animationView.playAnimation()
+        binding.animationView.setAnimation(R.raw.success_animation)
+        binding.animationView.playAnimation()
     }
 
     private fun showExitAnimation() {
         // You can add Lottie animation here
-        animationView.setAnimation(R.raw.exit_animation)
-        animationView.playAnimation()
+        binding.animationView.setAnimation(R.raw.exit_animation)
+        binding.animationView.playAnimation()
     }
 
     override fun onDestroy() {

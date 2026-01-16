@@ -1,18 +1,21 @@
-// DailyChargeActivity.kt
+package com.example.car_park
+
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_daily_charge.*
+import com.example.car_park.databinding.ActivityDailyChargeBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class DailyChargeActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityDailyChargeBinding
     private lateinit var dbHelper: DatabaseHelper
     private var userId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_daily_charge)
+        binding = ActivityDailyChargeBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
@@ -21,7 +24,7 @@ class DailyChargeActivity : AppCompatActivity() {
         userId = sharedPref.getInt("user_id", 0)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             finish()
         }
 
@@ -33,28 +36,28 @@ class DailyChargeActivity : AppCompatActivity() {
     }
 
     private fun loadTodaysData(date: String = getCurrentDate()) {
-        val dailyData = dbHelper.getDailyParkingData(userId, date)
+        val dailyData = dbHelper.getDailyParkingStats(userId, date)
 
         // Update UI
-        tvDate.text = formatDisplayDate(date)
-        tvTotalHours.text = formatDuration(dailyData.totalMinutes)
-        tvTotalAmount.text = "₹${"%.2f".format(dailyData.totalAmount)}"
-        tvParkingRate.text = "₹20.00 per hour"
+        binding.tvDate.text = formatDisplayDate(date)
+        binding.tvTotalHours.text = formatDuration(dailyData.totalMinutes)
+        binding.tvTotalAmount.text = "₹${"%.2f".format(dailyData.totalAmount)}"
+        binding.tvParkingRate.text = "₹20.00 per hour"
 
         // Calculate breakdown
         val hours = dailyData.totalMinutes / 60.0
         val calculatedAmount = hours * 20.0
 
-        tvCalculatedAmount.text = "₹${"%.2f".format(calculatedAmount)}"
+        binding.tvCalculatedAmount.text = "₹${"%.2f".format(calculatedAmount)}"
 
         // Show summary
         if (dailyData.totalMinutes > 0) {
-            layoutSummary.visibility = android.view.View.VISIBLE
-            tvNoData.visibility = android.view.View.GONE
+            binding.layoutSummary.visibility = android.view.View.VISIBLE
+            binding.tvNoData.visibility = android.view.View.GONE
         } else {
-            layoutSummary.visibility = android.view.View.GONE
-            tvNoData.visibility = android.view.View.VISIBLE
-            tvNoData.text = "No parking records for $date"
+            binding.layoutSummary.visibility = android.view.View.GONE
+            binding.tvNoData.visibility = android.view.View.VISIBLE
+            binding.tvNoData.text = "No parking records for $date"
         }
     }
 
@@ -81,17 +84,17 @@ class DailyChargeActivity : AppCompatActivity() {
     }
 
     private fun setupDateSelector() {
-        btnPrevDate.setOnClickListener {
+        binding.btnPrevDate.setOnClickListener {
             // Load previous day's data
             // Implement date navigation
         }
 
-        btnNextDate.setOnClickListener {
+        binding.btnNextDate.setOnClickListener {
             // Load next day's data
             // Implement date navigation
         }
 
-        btnSelectDate.setOnClickListener {
+        binding.btnSelectDate.setOnClickListener {
             // Show date picker dialog
             showDatePicker()
         }

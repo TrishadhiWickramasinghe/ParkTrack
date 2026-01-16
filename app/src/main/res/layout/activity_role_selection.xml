@@ -1,5 +1,5 @@
-<!-- activity_role_selection.xml -->
 <?xml version="1.0" encoding="utf-8"?>
+<!-- activity_role_selection.xml -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -84,7 +84,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Vehicle parking & payment"
+                android:text="Vehicle parking &amp; payment"
                 android:textSize="14sp"
                 android:textColor="#7F8C8D"
                 android:layout_marginTop="8dp"

@@ -1,4 +1,6 @@
 // DashboardChartsHelper.kt
+package com.example.car_park
+
 import android.content.Context
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.LineChart
@@ -161,35 +163,11 @@ class DashboardChartsHelper(private val context: Context) {
     }
 
     fun getDailyIncomeData(dbHelper: DatabaseHelper): Map<String, Double> {
-        val data = mutableMapOf<String, Double>()
-
-        val cursor = dbHelper.getDailyIncomeForLast7Days()
-        if (cursor.moveToFirst()) {
-            do {
-                val date = cursor.getString(0)
-                val amount = cursor.getDouble(1)
-                data[date] = amount
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
-
-        return data
+        return dbHelper.getDailyIncomeForLast7Days()
     }
 
     fun getMonthlyIncomeData(dbHelper: DatabaseHelper): Map<String, Double> {
-        val data = mutableMapOf<String, Double>()
-
-        val cursor = dbHelper.getMonthlyIncomeForLast6Months()
-        if (cursor.moveFirst()) {
-            do {
-                val month = cursor.getString(0)
-                val amount = cursor.getDouble(1)
-                data[month] = amount
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
-
-        return data
+        return dbHelper.getMonthlyIncomeForLast6Months()
     }
 
     fun getVehicleTypeData(dbHelper: DatabaseHelper): Map<String, Int> {
@@ -205,18 +183,6 @@ class DashboardChartsHelper(private val context: Context) {
     }
 
     fun getHourlyParkingData(dbHelper: DatabaseHelper): Map<Int, Int> {
-        val data = mutableMapOf<Int, Int>()
-
-        val cursor = dbHelper.getParkingCountByHour()
-        if (cursor.moveFirst()) {
-            do {
-                val hour = cursor.getInt(0)
-                val count = cursor.getInt(1)
-                data[hour] = count
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
-
-        return data
+        return dbHelper.getParkingCountByHour()
     }
 }

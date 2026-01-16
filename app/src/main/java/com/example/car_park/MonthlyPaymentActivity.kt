@@ -1,20 +1,23 @@
-// MonthlyPaymentActivity.kt
+package com.example.car_park
+
 import android.os.Bundle
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_monthly_payment.*
+import com.example.car_park.databinding.ActivityMonthlyPaymentBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class MonthlyPaymentActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityMonthlyPaymentBinding
     private lateinit var dbHelper: DatabaseHelper
     private var userId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_monthly_payment)
+        binding = ActivityMonthlyPaymentBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         dbHelper = DatabaseHelper(this)
 
@@ -23,7 +26,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         userId = sharedPref.getInt("user_id", 0)
 
         // Setup toolbar
-        toolbar.setNavigationOnClickListener {
+        binding.toolbar.setNavigationOnClickListener {
             finish()
         }
 
@@ -34,15 +37,15 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         loadMonthlyData()
 
         // Setup buttons
-        btnViewSummary.setOnClickListener {
+        binding.btnViewSummary.setOnClickListener {
             showSummaryDialog()
         }
 
-        btnDownloadSummary.setOnClickListener {
+        binding.btnDownloadSummary.setOnClickListener {
             downloadSummary()
         }
 
-        btnPayNow.setOnClickListener {
+        binding.btnPayNow.setOnClickListener {
             processPayment()
         }
     }
@@ -51,16 +54,16 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         val months = getLast12Months()
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, months)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerMonth.adapter = adapter
+        binding.spinnerMonth.adapter = adapter
 
         // Set current month as default
         val currentMonth = SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(Date())
         val position = months.indexOf(currentMonth)
         if (position != -1) {
-            spinnerMonth.setSelection(position)
+            binding.spinnerMonth.setSelection(position)
         }
 
-        spinnerMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        binding.spinnerMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
                 loadMonthlyData(months[position])
             }
@@ -87,42 +90,41 @@ class MonthlyPaymentActivity : AppCompatActivity() {
     private fun loadMonthlyData(monthYear: String = getCurrentMonthYear()) {
         val (month, year) = parseMonthYear(monthYear)
 
-        val monthlyData = dbHelper.getMonthlyParkingData(userId, month, year)
-        val paymentStatus = dbHelper.getPaymentStatus(userId, month, year)
+        val monthlyData = dbHelper.getMonthlyParkingStats(userId, month, year)
 
         // Update UI
-        tvMonth.text = monthYear
-        tvTotalHours.text = "${monthlyData.totalHours} hours"
-        tvTotalAmount.text = "₹${"%.2f".format(monthlyData.totalAmount)}"
-        tvPaymentStatus.text = paymentStatus.status
+        binding.tvMonth.text = monthYear
+        binding.tvTotalHours.text = "${monthlyData.totalHours} hours"
+        binding.tvTotalAmount.text = "₹${"%.2f".format(monthlyData.totalAmount)}"
+        binding.tvPaymentStatus.text = monthlyData.paymentStatus
 
         // Set status color
-        when (paymentStatus.status.lowercase()) {
+        when (monthlyData.paymentStatus.lowercase()) {
             "paid" -> {
-                tvPaymentStatus.setTextColor(resources.getColor(R.color.green))
-                btnPayNow.isEnabled = false
-                btnPayNow.text = "PAID"
+                binding.tvPaymentStatus.setTextColor(resources.getColor(R.color.green))
+                binding.btnPayNow.isEnabled = false
+                binding.btnPayNow.text = "PAID"
             }
             "pending" -> {
-                tvPaymentStatus.setTextColor(resources.getColor(R.color.orange))
-                btnPayNow.isEnabled = true
-                btnPayNow.text = "PAY NOW"
+                binding.tvPaymentStatus.setTextColor(resources.getColor(R.color.orange))
+                binding.btnPayNow.isEnabled = true
+                binding.btnPayNow.text = "PAY NOW"
             }
             else -> {
-                tvPaymentStatus.setTextColor(resources.getColor(R.color.red))
-                btnPayNow.isEnabled = true
-                btnPayNow.text = "PAY NOW"
+                binding.tvPaymentStatus.setTextColor(resources.getColor(R.color.red))
+                binding.btnPayNow.isEnabled = true
+                binding.btnPayNow.text = "PAY NOW"
             }
         }
 
         // Show/Hide summary button
         if (monthlyData.totalHours > 0) {
-            layoutSummary.visibility = android.view.View.VISIBLE
-            tvNoData.visibility = android.view.View.GONE
+            binding.layoutSummary.visibility = android.view.View.VISIBLE
+            binding.tvNoData.visibility = android.view.View.GONE
         } else {
-            layoutSummary.visibility = android.view.View.GONE
-            tvNoData.visibility = android.view.View.VISIBLE
-            tvNoData.text = "No parking records for $monthYear"
+            binding.layoutSummary.visibility = android.view.View.GONE
+            binding.tvNoData.visibility = android.view.View.VISIBLE
+            binding.tvNoData.text = "No parking records for $monthYear"
         }
     }
 
@@ -170,15 +172,3 @@ class MonthlyPaymentActivity : AppCompatActivity() {
     }
 }
 
-// Data classes
-data class MonthlyParkingData(
-    val totalHours: Int,
-    val totalAmount: Double,
-    val parkingDays: Int
-)
-
-data class PaymentStatus(
-    val status: String,
-    val paymentDate: String?,
-    val transactionId: String?
-)
