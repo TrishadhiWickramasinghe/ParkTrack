@@ -127,7 +127,12 @@ class NotificationService(private val context: Context) {
 
     private fun saveNotificationToDB(title: String, message: String, type: String) {
         val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        val userId = sharedPref.getInt("user_id", 0)
+        val userId = try {
+            sharedPref.getInt("user_id", 0)
+        } catch (e: ClassCastException) {
+            val userIdStr = sharedPref.getString("user_id", "0") ?: "0"
+            userIdStr.toIntOrNull() ?: 0
+        }
 
         val dbHelper = DatabaseHelper(context)
         val db = dbHelper.writableDatabase

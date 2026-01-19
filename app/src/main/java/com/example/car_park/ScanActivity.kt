@@ -43,7 +43,12 @@ class ScanActivity : AppCompatActivity() {
 
         // Get user ID
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        userId = sharedPref.getInt("user_id", 0)
+        userId = try {
+            sharedPref.getInt("user_id", 0)
+        } catch (e: ClassCastException) {
+            val userIdStr = sharedPref.getString("user_id", "0") ?: "0"
+            userIdStr.toIntOrNull() ?: 0
+        }
 
         // Initialize barcode scanner
         barcodeScanner = BarcodeScanning.getClient()

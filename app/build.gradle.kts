@@ -6,9 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
-    // Only add these if you're actually using Firebase
-    // id("com.google.gms.google-services")
-    // id("com.google.firebase.crashlytics")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -58,6 +56,11 @@ android {
 }
 
 dependencies {
+    // Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -89,6 +92,9 @@ dependencies {
 
     // QR/Barcode Scanning
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    // Guava (for ListenableFuture)
+    implementation("com.google.guava:guava:32.1.3-android")
 
     // CameraX for camera
     val camerax_version = "1.3.0"

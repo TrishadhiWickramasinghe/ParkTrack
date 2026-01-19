@@ -25,7 +25,15 @@ class DriverDashboardActivity : AppCompatActivity() {
 
         // Get user info from SharedPreferences
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        userId = sharedPref.getInt("user_id", 0)
+        
+        // Handle user_id safely - it might be stored as String
+        userId = try {
+            sharedPref.getInt("user_id", 0)
+        } catch (e: ClassCastException) {
+            val userIdStr = sharedPref.getString("user_id", "0") ?: "0"
+            userIdStr.toIntOrNull() ?: 0
+        }
+        
         userName = sharedPref.getString("user_name", "") ?: ""
         carNumber = sharedPref.getString("car_number", "") ?: ""
 

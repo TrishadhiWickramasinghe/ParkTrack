@@ -106,7 +106,12 @@ class AdminSettingsActivity : AppCompatActivity() {
 
         // Verify current password
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        val userId = sharedPref.getInt("user_id", 0)
+        val userId = try {
+            sharedPref.getInt("user_id", 0)
+        } catch (e: ClassCastException) {
+            val userIdStr = sharedPref.getString("user_id", "0") ?: "0"
+            userIdStr.toIntOrNull() ?: 0
+        }
 
         if (dbHelper.verifyPassword(userId, current)) {
             dbHelper.updatePassword(userId, new)
