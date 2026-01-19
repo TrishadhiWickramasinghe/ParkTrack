@@ -1,98 +1,494 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F9F5">
+
+    <!-- Background Decoration -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/green_gradient"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <!-- App Bar -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+            android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/green_gradient"
+            app:title="Parking Reports"
+            app:subtitle="View &amp; Export Logs"
+            app:titleTextColor="#FFFFFF"
+            app:subtitleTextColor="#E8F5E9"
+            app:navigationIcon="@drawable/ic_back"
+            android:elevation="8dp"
+            app:contentInsetStart="0dp">
 
-        <EditText
-            android:id="@+id/etDate"
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Parking Reports"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.02"/>
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_filter"
+                    android:tint="#FFFFFF"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:id="@+id/btnFilterMenu"/>
+            </RelativeLayout>
+        </com.google.android.material.appbar.MaterialToolbar>
+
+        <!-- Filter Section Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Date" />
+            android:layout_margin="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-        <EditText
-            android:id="@+id/etVehicleNumber"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Filter Reports"
+                    android:textSize="16sp"
+                    android:textColor="#1B5E20"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Date Selection -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeColor="#81C784"
+                        app:startIconDrawable="@drawable/ic_calendar"
+                        app:startIconTint="#4CAF50">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDate"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Select Date"
+                            android:inputType="none"
+                            android:textColor="#2E7D32"
+                            android:textSize="14sp"
+                            android:clickable="true"
+                            android:focusable="false"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPickDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Pick"
+                        android:textSize="12sp"
+                        app:backgroundTint="#4CAF50"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_date_range"
+                        app:iconSize="16dp"
+                        app:iconTint="#FFFFFF"
+                        android:elevation="2dp"/>
+                </LinearLayout>
+
+                <!-- Vehicle Number Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="#81C784"
+                    app:startIconDrawable="@drawable/ic_car"
+                    app:startIconTint="#4CAF50">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etVehicleNumber"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Vehicle Number"
+                        android:textColor="#2E7D32"
+                        android:textSize="14sp"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Filter Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnApplyFilters"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="Apply Filters"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="#4CAF50"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_filter"
+                        app:iconSize="18dp"
+                        app:iconTint="#FFFFFF"
+                        android:elevation="4dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnClearFilters"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Clear"
+                        android:textSize="14sp"
+                        app:backgroundTint="#E0E0E0"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_clear"
+                        app:iconSize="18dp"
+                        app:iconTint="#757575"
+                        android:textColor="#757575"
+                        android:elevation="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Statistics Cards -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Vehicle Number" />
+            android:orientation="horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp">
 
-        <Button
-            android:id="@+id/btnPickDate"
-            android:layout_width="wrap_content"
+            <!-- Total Records Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Records"
+                        android:textSize="12sp"
+                        android:textColor="#757575"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalRecords"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="24sp"
+                        android:textColor="#1B5E20"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Total Amount Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Amount"
+                        android:textSize="12sp"
+                        android:textColor="#757575"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₹0"
+                        android:textSize="20sp"
+                        android:textColor="#1B5E20"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Active Parkings Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#4CAF50">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Active"
+                        android:textSize="12sp"
+                        android:textColor="#FFFFFF"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvActiveParkings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="24sp"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- Total Hours Card (Full Width) -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pick Date" />
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-        <Button
-            android:id="@+id/btnApplyFilters"
-            android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="20dp">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_timer"
+                    android:tint="#4CAF50"
+                    android:layout_marginEnd="16dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Parking Hours"
+                        android:textSize="14sp"
+                        android:textColor="#757575"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalHours"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 hours"
+                        android:textSize="18sp"
+                        android:textColor="#1B5E20"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_info"
+                    android:tint="#81C784"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Export Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Apply Filters" />
+            android:orientation="horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_horizontal">
 
-        <Button
-            android:id="@+id/btnClearFilters"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Clear Filters" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExportReport"
+                android:layout_width="0dp"
+                android:layout_height="45dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Export PDF"
+                android:textSize="14sp"
+                app:backgroundTint="#FFFFFF"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_pdf"
+                app:iconSize="20dp"
+                app:iconTint="#FF5252"
+                app:strokeColor="#FF5252"
+                app:strokeWidth="1dp"
+                android:textColor="#FF5252"
+                android:elevation="2dp"/>
 
-        <Button
-            android:id="@+id/btnExportReport"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Export PDF" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExportExcel"
+                android:layout_width="0dp"
+                android:layout_height="45dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Export Excel"
+                android:textSize="14sp"
+                app:backgroundTint="#FFFFFF"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_excel"
+                app:iconSize="20dp"
+                app:iconTint="#4CAF50"
+                app:strokeColor="#4CAF50"
+                app:strokeWidth="1dp"
+                android:textColor="#4CAF50"
+                android:elevation="2dp"/>
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/btnExportExcel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Export Excel" />
-
+        <!-- Main Content Area -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
 
+            <!-- Empty State View -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/ic_empty_reports"
+                    android:tint="#81C784"
+                    android:layout_marginBottom="24dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No Reports Found"
+                    android:textSize="18sp"
+                    android:textColor="#757575"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Apply filters to view parking reports"
+                    android:textSize="14sp"
+                    android:textColor="#9E9E9E"
+                    android:textAlignment="center"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp"/>
+            </LinearLayout>
+
+            <!-- RecyclerView for Reports -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="100dp"/>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        <LinearLayout
-            android:id="@+id/layoutEmptyState"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical" />
-
-        <TextView
-            android:id="@+id/tvTotalRecords"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvTotalAmount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvTotalHours"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvActiveParkings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
     </LinearLayout>
+
+    <!-- Floating Action Button for Quick Actions -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:text="Quick Stats"
+        android:textColor="#FFFFFF"
+        app:icon="@drawable/ic_analytics"
+        app:iconTint="#FFFFFF"
+        app:backgroundTint="#4CAF50"
+        app:cornerRadius="16dp"
+        app:elevation="8dp"
+        android:contentDescription="View quick statistics"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
