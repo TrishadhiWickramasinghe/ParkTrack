@@ -1,113 +1,451 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#FFFFFF"
+    android:padding="24dp">
 
+    <!-- Header Background -->
+    <View
+        android:id="@+id/headerBackground"
+        android:layout_width="0dp"
+        android:layout_height="120dp"
+        android:background="@drawable/green_gradient_dialog"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Special Rate Icon -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/rateIconCard"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="36dp"
+        app:cardElevation="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_special_rate"
+            android:tint="#2E7D32" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Title -->
     <TextView
-        android:layout_width="match_parent"
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
         android:text="Special Rate Details"
-        android:textSize="18sp"
+        android:textColor="#1B5E20"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"/>
+        android:fontFamily="@font/poppins_bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerBackground" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etRateName"
+        android:text="Configure special parking tariffs"
+        android:textColor="#757575"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_regular"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <!-- Rate Form Card -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintBottom_toTopOf="@id/buttonContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/formCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Rate Name"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etRateValue"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Rate Value (₹/hour)"
-            android:inputType="numberDecimal"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Description"/>
-    </com.google.android.material.textfield.TextInputLayout>
+                <!-- Rate Name Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxStrokeColor="#81C784"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:startIconDrawable="@drawable/ic_tag_special"
+                    app:startIconTint="#4CAF50"
+                    app:hintTextColor="#4CAF50"
+                    app:errorEnabled="true">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etStartTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Start Time (HH:mm)"/>
-    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etRateName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Rate Name"
+                        android:textColor="#2E7D32"
+                        android:textSize="16sp"
+                        android:paddingVertical="16dp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etEndTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="End Time (HH:mm)"/>
-    </com.google.android.material.textfield.TextInputLayout>
+                <!-- Rate Value Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxStrokeColor="#81C784"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:startIconDrawable="@drawable/ic_currency_special"
+                    app:startIconTint="#4CAF50"
+                    app:endIconDrawable="@drawable/ic_per_hour"
+                    app:endIconTint="#4CAF50"
+                    app:hintTextColor="#4CAF50"
+                    app:errorEnabled="true">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etVehicleTypes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Vehicle Types (comma separated)"/>
-    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etRateValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Rate Value (₹/hour)"
+                        android:inputType="numberDecimal"
+                        android:textColor="#2E7D32"
+                        android:textSize="16sp"
+                        android:paddingVertical="16dp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDays"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Days (comma separated)"/>
-    </com.google.android.material.textfield.TextInputLayout>
+                <!-- Description Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxStrokeColor="#81C784"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="250"
+                    app:startIconDrawable="@drawable/ic_description_special"
+                    app:startIconTint="#4CAF50"
+                    app:hintTextColor="#4CAF50"
+                    app:errorEnabled="true">
 
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Description"
+                        android:textColor="#2E7D32"
+                        android:textSize="16sp"
+                        android:paddingVertical="16dp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Time Picker Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <!-- Start Time Input -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        app:boxCornerRadiusBottomEnd="16dp"
+                        app:boxCornerRadiusBottomStart="16dp"
+                        app:boxCornerRadiusTopEnd="16dp"
+                        app:boxCornerRadiusTopStart="16dp"
+                        app:boxStrokeColor="#81C784"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        app:startIconDrawable="@drawable/ic_time_start"
+                        app:startIconTint="#4CAF50"
+                        app:endIconDrawable="@drawable/ic_time_picker"
+                        app:endIconTint="#4CAF50"
+                        app:endIconMode="custom"
+                        app:hintTextColor="#4CAF50"
+                        app:errorEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etStartTime"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Start Time (HH:mm)"
+                            android:textColor="#2E7D32"
+                            android:textSize="16sp"
+                            android:paddingVertical="16dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:focusable="false"
+                            android:clickable="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- End Time Input -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        app:boxCornerRadiusBottomEnd="16dp"
+                        app:boxCornerRadiusBottomStart="16dp"
+                        app:boxCornerRadiusTopEnd="16dp"
+                        app:boxCornerRadiusTopStart="16dp"
+                        app:boxStrokeColor="#81C784"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        app:startIconDrawable="@drawable/ic_time_end"
+                        app:startIconTint="#4CAF50"
+                        app:endIconDrawable="@drawable/ic_time_picker"
+                        app:endIconTint="#4CAF50"
+                        app:endIconMode="custom"
+                        app:hintTextColor="#4CAF50"
+                        app:errorEnabled="true">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etEndTime"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="End Time (HH:mm)"
+                            android:textColor="#2E7D32"
+                            android:textSize="16sp"
+                            android:paddingVertical="16dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:focusable="false"
+                            android:clickable="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Duration Preview -->
+                <TextView
+                    android:id="@+id/tvDurationPreview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:text="Duration: --"
+                    android:textColor="#689F38"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_medium"
+                    android:visibility="gone" />
+
+                <!-- Vehicle Types Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxStrokeColor="#81C784"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:startIconDrawable="@drawable/ic_vehicle_types"
+                    app:startIconTint="#4CAF50"
+                    app:helperText="Separate with commas (Car, Bike, SUV)"
+                    app:helperTextColor="#81C784"
+                    app:hintTextColor="#4CAF50"
+                    app:errorEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etVehicleTypes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Vehicle Types"
+                        android:textColor="#2E7D32"
+                        android:textSize="16sp"
+                        android:paddingVertical="16dp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Days Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxStrokeColor="#81C784"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:startIconDrawable="@drawable/ic_calendar_days"
+                    app:startIconTint="#4CAF50"
+                    app:helperText="Separate with commas (Mon, Tue, Wed...)"
+                    app:helperTextColor="#81C784"
+                    app:hintTextColor="#4CAF50"
+                    app:errorEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etDays"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Days"
+                        android:textColor="#2E7D32"
+                        android:textSize="16sp"
+                        android:paddingVertical="16dp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Active Status Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#F1F8E9"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="20dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/ic_active_status"
+                            android:tint="#4CAF50"
+                            android:layout_marginEnd="16dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Active Status"
+                            android:textColor="#33691E"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchActive"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            app:trackColorInactive="#E0E0E0"
+                            app:trackColor="#81C784"
+                            app:thumbColor="#FFFFFF" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Action Buttons -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/buttonContainer"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
-        
-        <TextView
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Cancel Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
+            android:layout_marginEnd="12dp"
             android:layout_weight="1"
-            android:text="Active"/>
-        
-        <Switch
-            android:id="@+id/switchActive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"/>
+            android:text="CANCEL"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_bold"
+            app:cornerRadius="14dp"
+            app:strokeColor="#4CAF50"
+            app:strokeWidth="1.5dp"
+            app:rippleColor="#E8F5E9" />
+
+        <!-- Save Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSave"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="SAVE RATE"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_bold"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_save_rate"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#FFFFFF"
+            app:rippleColor="#388E3C"
+            android:elevation="6dp" />
     </LinearLayout>
 
-</LinearLayout>
+    <!-- Progress Indicator -->
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:indeterminate="true"
+        android:indeterminateTint="#4CAF50"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonContainer"
+        app:layout_marginTop="20dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
