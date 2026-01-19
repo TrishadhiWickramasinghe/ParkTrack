@@ -26,7 +26,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@drawable/green_gradient"
             app:title="Monthly Payment"
-            app:subtitle="View & Pay Monthly Bill"
+            app:subtitle="View &amp; Pay Monthly Bill"
             app:titleTextColor="#FFFFFF"
             app:subtitleTextColor="#E8F5E9"
             app:navigationIcon="@drawable/ic_back"
