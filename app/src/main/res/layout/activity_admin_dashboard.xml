@@ -1,23 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F9F5">
+
+    <!-- Background Decoration -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/green_gradient"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <!-- App Bar with Enhanced Design -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+            android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/green_gradient"
+            app:titleTextColor="#FFFFFF"
+            app:subtitleTextColor="#E8F5E9"
+            app:title="Dashboard"
+            app:subtitle="Car Park Management"
+            app:navigationIcon="@drawable/ic_menu"
+            android:elevation="8dp"
+            app:contentInsetStart="0dp">
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Car Park Pro"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.02"/>
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_notifications"
+                    android:tint="#FFFFFF"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </RelativeLayout>
+        </com.google.android.material.appbar.MaterialToolbar>
+
+        <!-- Content Area with Ripple Background -->
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:overScrollMode="never"
+            android:clipToPadding="false"
+            android:paddingTop="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -25,69 +78,511 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <!-- Stats Overview Cards -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="24dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginEnd="8dp">
+
+                        <!-- Parked Vehicles Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardParkedVehicles"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="6dp"
+                            app:cardBackgroundColor="#FFFFFF"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:layout_marginBottom="12dp">
+
+                                    <ImageView
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:src="@drawable/ic_parked_cars"
+                                        android:tint="#4CAF50"
+                                        android:layout_marginEnd="12dp"/>
+
+                                    <TextView
+                                        android:id="@+id/tvParkedVehicles"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="0"
+                                        android:textSize="28sp"
+                                        android:textColor="#1B5E20"
+                                        android:textStyle="bold"
+                                        android:fontFamily="sans-serif-medium"/>
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Parked Vehicles"
+                                    android:textSize="14sp"
+                                    android:textColor="#757575"/>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Today's Income Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="6dp"
+                            app:cardBackgroundColor="#FFFFFF"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:layout_marginBottom="12dp">
+
+                                    <ImageView
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:src="@drawable/ic_money"
+                                        android:tint="#4CAF50"
+                                        android:layout_marginEnd="12dp"/>
+
+                                    <TextView
+                                        android:id="@+id/tvTodayIncome"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="₹0"
+                                        android:textSize="28sp"
+                                        android:textColor="#1B5E20"
+                                        android:textStyle="bold"
+                                        android:fontFamily="sans-serif-medium"/>
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Today's Income"
+                                    android:textSize="14sp"
+                                    android:textColor="#757575"/>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="8dp">
+
+                        <!-- Today's Vehicles Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="6dp"
+                            app:cardBackgroundColor="#FFFFFF"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:layout_marginBottom="12dp">
+
+                                    <ImageView
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:src="@drawable/ic_today_cars"
+                                        android:tint="#4CAF50"
+                                        android:layout_marginEnd="12dp"/>
+
+                                    <TextView
+                                        android:id="@+id/tvTodayVehicles"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="0"
+                                        android:textSize="28sp"
+                                        android:textColor="#1B5E20"
+                                        android:textStyle="bold"
+                                        android:fontFamily="sans-serif-medium"/>
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Today's Vehicles"
+                                    android:textSize="14sp"
+                                    android:textColor="#757575"/>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Monthly Income Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="6dp"
+                            app:cardBackgroundColor="#FFFFFF"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:layout_marginBottom="12dp">
+
+                                    <ImageView
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:src="@drawable/ic_monthly_income"
+                                        android:tint="#4CAF50"
+                                        android:layout_marginEnd="12dp"/>
+
+                                    <TextView
+                                        android:id="@+id/tvMonthlyIncome"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="₹0"
+                                        android:textSize="28sp"
+                                        android:textColor="#1B5E20"
+                                        android:textStyle="bold"
+                                        android:fontFamily="sans-serif-medium"/>
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Monthly Income"
+                                    android:textSize="14sp"
+                                    android:textColor="#757575"/>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Parking Availability Card -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardParkedVehicles"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    android:foreground="?attr/selectableItemBackground">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardManageDrivers"
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="24dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="16dp"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_parking"
+                                android:tint="#4CAF50"
+                                android:layout_marginEnd="12dp"/>
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Parking Availability"
+                                android:textSize="18sp"
+                                android:textColor="#1B5E20"
+                                android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium"/>
+
+                            <TextView
+                                android:id="@+id/tvAvailableSlots"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0/0"
+                                android:textSize="18sp"
+                                android:textColor="#4CAF50"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+
+                        <ProgressBar
+                            android:id="@+id/progressAvailability"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="16dp"
+                            android:layout_marginBottom="12dp"
+                            android:progressTint="#4CAF50"
+                            android:progressBackgroundTint="#E8F5E9"
+                            android:max="100"
+                            android:progress="0"/>
+
+                        <TextView
+                            android:id="@+id/tvAvailabilityStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Loading availability..."
+                            android:textSize="14sp"
+                            android:textColor="#757575"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Quick Actions Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quick Actions"
+                    android:textSize="18sp"
+                    android:textColor="#1B5E20"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp"
+                    android:fontFamily="sans-serif-medium"/>
+
+                <!-- Quick Actions Grid -->
+                <GridLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    android:rowCount="2"
+                    android:alignmentMode="alignMargins"
+                    android:columnOrderPreserved="false"
+                    android:layout_marginBottom="24dp">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardParkingLogs"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    <!-- Manage Drivers Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardManageDrivers"
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_columnWeight="1"
+                        android:layout_rowWeight="1"
+                        android:layout_margin="8dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="4dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardManageRates"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvParkedVehicles"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/ic_driver"
+                                android:tint="#4CAF50"
+                                android:layout_marginBottom="12dp"/>
 
-                <TextView
-                    android:id="@+id/tvTodayVehicles"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Manage Drivers"
+                                android:textSize="14sp"
+                                android:textColor="#1B5E20"
+                                android:textAlignment="center"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:id="@+id/tvTodayIncome"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    <!-- Parking Logs Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardParkingLogs"
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_columnWeight="1"
+                        android:layout_rowWeight="1"
+                        android:layout_margin="8dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="4dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                <TextView
-                    android:id="@+id/tvMonthlyIncome"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvAvailableSlots"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/ic_history"
+                                android:tint="#4CAF50"
+                                android:layout_marginBottom="12dp"/>
 
-                <ProgressBar
-                    android:id="@+id/progressAvailability"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Parking Logs"
+                                android:textSize="14sp"
+                                android:textColor="#1B5E20"
+                                android:textAlignment="center"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:id="@+id/tvAvailabilityStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    <!-- Manage Rates Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardManageRates"
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_columnWeight="1"
+                        android:layout_rowWeight="1"
+                        android:layout_margin="8dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="4dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="16dp">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/ic_rates"
+                                android:tint="#4CAF50"
+                                android:layout_marginBottom="12dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Manage Rates"
+                                android:textSize="14sp"
+                                android:textColor="#1B5E20"
+                                android:textAlignment="center"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Add New Vehicle Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_columnWeight="1"
+                        android:layout_rowWeight="1"
+                        android:layout_margin="8dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="4dp"
+                        app:cardBackgroundColor="#4CAF50"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="16dp">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:src="@drawable/ic_add_car"
+                                android:tint="#FFFFFF"
+                                android:layout_marginBottom="12dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Add New Vehicle"
+                                android:textSize="14sp"
+                                android:textColor="#FFFFFF"
+                                android:textAlignment="center"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </GridLayout>
             </LinearLayout>
         </ScrollView>
 
+        <!-- Bottom Navigation with Enhanced Design -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom" />
+            android:layout_height="68dp"
+            android:layout_gravity="bottom"
+            android:background="#FFFFFF"
+            android:elevation="12dp"
+            app:itemIconTint="@color/bottom_nav_colors"
+            app:itemTextColor="@color/bottom_nav_colors"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_navigation_menu">
+
+            <!-- Add background shape -->
+            <com.google.android.material.shape.MaterialShapeDrawable
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:shapeAppearanceOverlay="@style/RoundedTopCorners"/>
+        </com.google.android.material.bottomnavigation.BottomNavigationView>
     </LinearLayout>
+
+    <!-- Floating Action Button for Quick Action -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:text="Check-In Vehicle"
+        android:textColor="#FFFFFF"
+        app:icon="@drawable/ic_qr_code"
+        app:iconTint="#FFFFFF"
+        app:backgroundTint="#4CAF50"
+        app:cornerRadius="16dp"
+        app:elevation="8dp"
+        android:contentDescription="Scan QR for check-in"
+        android:visibility="visible"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

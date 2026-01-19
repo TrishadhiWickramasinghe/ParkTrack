@@ -6,30 +6,47 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/gradient_background"
+    android:background="#FFFFFF"
     android:fitsSystemWindows="true">
 
-    <!-- Decorative Top Shape -->
-
-    <!-- Logo -->
-
-    <ImageView
+    <!-- Green Gradient Top Shape -->
+    <View
         android:id="@+id/top_shape"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:src="@drawable/top_login_shape"
+        android:layout_height="300dp"
+        android:background="@drawable/green_gradient"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Curved bottom for top shape -->
     <ImageView
-        android:id="@+id/logo"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:src="@drawable/logo_parking"
-        android:layout_marginTop="20dp"
+        android:id="@+id/curve_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:src="@drawable/curve_bottom"
+        app:layout_constraintTop_toBottomOf="@id/top_shape"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Logo Container with subtle shadow -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        app:cardCornerRadius="50dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#FFFFFF"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="60dp">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:src="@drawable/logo_parking"
+            android:tint="#2E7D32" />
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- App Title -->
     <TextView
@@ -37,13 +54,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Car Park"
-        android:textSize="32sp"
-        android:textColor="@color/black"
+        android:textSize="36sp"
+        android:textColor="#FFFFFF"
         android:textStyle="bold"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/poppins_bold"
+        android:letterSpacing="0.02"
         app:layout_constraintTop_toBottomOf="@+id/logo"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
 
     <!-- Subtitle -->
     <TextView
@@ -51,69 +70,88 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Smart Parking Management"
-        android:textSize="14sp"
-        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textColor="#E8F5E9"
+        android:fontFamily="@font/poppins_medium"
         app:layout_constraintTop_toBottomOf="@+id/title"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="4dp" />
 
-    <!-- Login Card -->
+    <!-- Login Card with modern design -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/login_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/top_shape"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="12dp"
+        app:layout_constraintTop_toBottomOf="@id/curve_bottom"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:cardBackgroundColor="#FFFFFF">
+        app:cardBackgroundColor="#FFFFFF"
+        android:layout_marginTop="40dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="521dp"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="32dp">
 
-            <!-- Header -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Welcome Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="Welcome Back!"
-                android:textColor="#2C3E50"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:orientation="vertical"
+                android:layout_marginBottom="32dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="Sign in to continue"
-                android:textColor="#7F8C8D"
-                android:textSize="14sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Welcome Back 👋"
+                    android:textColor="#1B5E20"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Sign in to manage your parking"
+                    android:textColor="#757575"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
 
             <!-- Email Input -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxStrokeColor="#3498DB"
-                app:startIconDrawable="@drawable/ic_email">
+                android:layout_marginBottom="20dp"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="#81C784"
+                app:boxStrokeWidth="1dp"
+                app:boxStrokeWidthFocused="2dp"
+                app:endIconTint="#4CAF50"
+                app:startIconDrawable="@drawable/ic_email"
+                app:startIconTint="#4CAF50"
+                app:hintTextColor="#4CAF50">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Email"
+                    android:hint="Email Address"
                     android:inputType="textEmailAddress"
-                    android:textColor="#2C3E50" />
+                    android:textColor="#2E7D32"
+                    android:textSize="16sp"
+                    android:paddingVertical="16dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Password Input -->
@@ -122,13 +160,18 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxStrokeColor="#3498DB"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="#81C784"
+                app:boxStrokeWidth="1dp"
+                app:boxStrokeWidthFocused="2dp"
                 app:endIconMode="password_toggle"
-                app:startIconDrawable="@drawable/ic_lock">
+                app:endIconTint="#4CAF50"
+                app:startIconDrawable="@drawable/ic_lock"
+                app:startIconTint="#4CAF50"
+                app:hintTextColor="#4CAF50">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etPassword"
@@ -136,7 +179,9 @@
                     android:layout_height="wrap_content"
                     android:hint="Password"
                     android:inputType="textPassword"
-                    android:textColor="#2C3E50" />
+                    android:textColor="#2E7D32"
+                    android:textSize="16sp"
+                    android:paddingVertical="16dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Forgot Password -->
@@ -145,12 +190,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="32dp"
                 android:clickable="true"
+                android:focusable="true"
                 android:text="Forgot Password?"
-                android:textColor="#3498DB"
-                android:textSize="14sp" />
+                android:textColor="#4CAF50"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium" />
 
             <!-- Login Button -->
             <com.google.android.material.button.MaterialButton
@@ -158,69 +206,97 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="24dp"
-                android:text="LOGIN"
+                android:text="SIGN IN"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                app:backgroundTint="#3498DB"
-                app:cornerRadius="12dp"
+                android:fontFamily="@font/poppins_bold"
+                android:letterSpacing="0.03"
+                app:backgroundTint="#4CAF50"
+                app:cornerRadius="16dp"
                 app:icon="@drawable/ic_login"
                 app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                app:iconTint="#FFFFFF" />
+                app:iconPadding="12dp"
+                app:iconTint="#FFFFFF"
+                app:rippleColor="#388E3C"
+                android:elevation="4dp" />
 
             <!-- OR Divider -->
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp">
+                android:layout_marginVertical="24dp"
+                android:gravity="center"
+                android:orientation="horizontal">
 
                 <View
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="1dp"
-                    android:layout_centerVertical="true"
+                    android:layout_weight="1"
                     android:background="#E0E0E0" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:background="#FFFFFF"
-                    android:paddingHorizontal="16dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:paddingHorizontal="12dp"
                     android:text="OR"
-                    android:textColor="#7F8C8D" />
-            </RelativeLayout>
+                    android:textColor="#757575"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_medium" />
 
-            <!-- Sign Up Text -->
-            <RelativeLayout
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#E0E0E0" />
+            </LinearLayout>
+
+            <!-- Sign Up Section -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingVertical="16dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
                     android:text="Don't have an account?"
-                    android:textColor="#7F8C8D" />
+                    android:textColor="#757575"
+                    android:textSize="15sp"
+                    android:fontFamily="@font/poppins_regular" />
 
                 <TextView
                     android:id="@+id/tvRegister"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
+                    android:layout_marginStart="8dp"
                     android:clickable="true"
-                    android:text=" Sign Up"
-                    android:textColor="#3498DB"
-                    android:textStyle="bold" />
-            </RelativeLayout>
+                    android:focusable="true"
+                    android:text="Sign Up"
+                    android:textColor="#4CAF50"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_bold" />
+            </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Bottom Decorative Shape -->
+    <!-- Bottom Green Wave -->
     <ImageView
         android:id="@+id/bottom_shape"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:src="@drawable/bottom_login_shape"
+        android:layout_height="120dp"
+        android:src="@drawable/green_wave"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Bottom Green Light Effect -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="#E8F5E9"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
