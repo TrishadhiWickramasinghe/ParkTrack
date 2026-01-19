@@ -1,78 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- activity_driver_dashboard.xml -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7FA">
+    android:background="#F5F9F5">
+
+    <!-- Background Decoration -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/green_gradient"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Header -->
+            <!-- Header Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/gradient_header"
-                android:padding="24dp">
+                android:padding="24dp"
+                android:paddingBottom="0dp">
 
+                <!-- Profile Header -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/profileImage"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
-                        android:src="@drawable/ic_profile_default"
-                        app:civ_border_width="2dp"
-                        app:civ_border_color="#FFFFFF" />
+                    <!-- Profile Image with Online Status -->
+                    <RelativeLayout
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_marginEnd="16dp">
 
+                        <de.hdodenhof.circleimageview.CircleImageView
+                            android:id="@+id/profileImage"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@drawable/ic_profile_default"
+                            app:civ_border_width="2dp"
+                            app:civ_border_color="#FFFFFF"
+                            app:civ_border_overlay="true"/>
+
+                        <!-- Online Status Indicator -->
+                        <View
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentBottom="true"
+                            android:background="@drawable/bg_online_status"/>
+                    </RelativeLayout>
+
+                    <!-- User Info -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:layout_marginStart="16dp">
+                        android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tvUserName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="John Doe"
-                            android:textSize="18sp"
+                            android:text="Driver Name"
+                            android:textSize="20sp"
                             android:textColor="#FFFFFF"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"/>
 
-                        <TextView
-                            android:id="@+id/tvCarNumber"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Car: MH12AB1234"
-                            android:textSize="12sp"
-                            android:textColor="#B3FFFFFF"
-                            android:layout_marginTop="2dp" />
+                            android:orientation="horizontal"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_car"
+                                android:tint="#E8F5E9"
+                                android:layout_marginEnd="4dp"/>
+
+                            <TextView
+                                android:id="@+id/tvCarNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="MH12AB1234"
+                                android:textSize="14sp"
+                                android:textColor="#E8F5E9"/>
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <ImageView
+                    <!-- Logout Button -->
+                    <com.google.android.material.card.MaterialCardView
                         android:id="@+id/btnLogout"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_logout"
-                        android:tint="#FFFFFF"
-                        android:padding="4dp"
-                        android:background="?attr/selectableItemBackgroundBorderless" />
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardElevation="2dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_logout"
+                            android:tint="#4CAF50"/>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
                 <!-- Parking Status Card -->
@@ -81,202 +131,298 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="8dp"
                     app:cardBackgroundColor="#FFFFFF">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp">
+                        android:padding="24dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="CURRENT STATUS"
-                            android:textSize="12sp"
-                            android:textColor="#7F8C8D"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="8dp" />
-
+                        <!-- Status Header -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
+                            android:layout_marginBottom="16dp"
                             android:gravity="center_vertical">
 
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_parking_status"
+                                android:tint="#4CAF50"
+                                android:layout_marginEnd="12dp"/>
+
                             <TextView
-                                android:id="@+id/tvParkingStatus"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="PARKED"
-                                android:textSize="24sp"
-                                android:textColor="#2ECC71"
-                                android:textStyle="bold" />
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:gravity="end">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="DURATION"
-                                    android:textSize="10sp"
-                                    android:textColor="#7F8C8D" />
-
-                                <TextView
-                                    android:id="@+id/tvParkingDuration"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="2h 30m"
-                                    android:textSize="18sp"
-                                    android:textColor="#2C3E50"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
+                                android:text="CURRENT STATUS"
+                                android:textSize="12sp"
+                                android:textColor="#757575"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.5"/>
                         </LinearLayout>
 
-                        <Button
+                        <!-- Status Details -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="20dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvParkingStatus"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="NOT PARKED"
+                                    android:textSize="28sp"
+                                    android:textColor="#1B5E20"
+                                    android:textStyle="bold"
+                                    android:fontFamily="sans-serif-medium"/>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Tap to scan QR for parking"
+                                    android:textSize="12sp"
+                                    android:textColor="#757575"
+                                    android:layout_marginTop="4dp"/>
+                            </LinearLayout>
+
+                            <!-- Duration Display -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:cardCornerRadius="12dp"
+                                app:cardBackgroundColor="#E8F5E9"
+                                app:cardElevation="0dp">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:gravity="center"
+                                    android:paddingVertical="12dp"
+                                    android:paddingHorizontal="16dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="DURATION"
+                                        android:textSize="10sp"
+                                        android:textColor="#4CAF50"
+                                        android:textStyle="bold"
+                                        android:letterSpacing="0.5"/>
+
+                                    <TextView
+                                        android:id="@+id/tvParkingDuration"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="0h 0m"
+                                        android:textSize="20sp"
+                                        android:textColor="#1B5E20"
+                                        android:textStyle="bold"
+                                        android:fontFamily="sans-serif-medium"/>
+                                </LinearLayout>
+                            </com.google.android.material.card.MaterialCardView>
+                        </LinearLayout>
+
+                        <!-- Scan QR Button -->
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnScanNow"
                             android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:text="SCAN NOW"
+                            android:layout_height="56dp"
+                            android:text="SCAN QR &amp; PARK"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:layout_marginTop="16dp"
-                            app:cornerRadius="12dp"
-                            app:icon="@drawable/ic_qr_scan"
+                            android:textColor="#FFFFFF"
+                            android:letterSpacing="0.5"
+                            app:backgroundTint="#4CAF50"
+                            app:cornerRadius="16dp"
+                            app:icon="@drawable/ic_qr_scanner"
+                            app:iconSize="24dp"
+                            app:iconTint="#FFFFFF"
                             app:iconGravity="textStart"
-                            app:iconPadding="8dp"
-                            app:backgroundTint="#3498DB" />
+                            app:iconPadding="12dp"
+                            android:elevation="4dp"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
-            <!-- Today's Stats -->
+            <!-- Today's Statistics -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Today's Stats"
+                android:text="Today's Statistics"
                 android:textSize="18sp"
-                android:textColor="#2C3E50"
+                android:textColor="#1B5E20"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="16dp"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp">
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="24dp">
 
-                <!-- Today's Hours -->
+                <!-- Today's Hours Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="140dp"
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp">
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/gradient_blue_light">
+                        android:padding="20dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_timer"
+                            android:tint="#4CAF50"
+                            android:layout_marginBottom="12dp"/>
 
                         <TextView
                             android:id="@+id/tvTodayHours"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="4h 30m"
+                            android:text="0h 0m"
                             android:textSize="24sp"
-                            android:textColor="#2C3E50"
-                            android:textStyle="bold" />
+                            android:textColor="#1B5E20"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="TOTAL HOURS"
                             android:textSize="12sp"
-                            android:textColor="#7F8C8D"
-                            android:layout_marginTop="8dp" />
+                            android:textColor="#757575"
+                            android:layout_marginTop="8dp"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Today's Charge -->
+                <!-- Today's Charge Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="140dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp">
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#4CAF50">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/gradient_green_light">
+                        android:padding="20dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_money"
+                            android:tint="#FFFFFF"
+                            android:layout_marginBottom="12dp"/>
 
                         <TextView
                             android:id="@+id/tvTodayCharge"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="₹150.00"
+                            android:text="₹0.00"
                             android:textSize="24sp"
-                            android:textColor="#2C3E50"
-                            android:textStyle="bold" />
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="TODAY'S CHARGE"
                             android:textSize="12sp"
-                            android:textColor="#7F8C8D"
-                            android:layout_marginTop="8dp" />
+                            android:textColor="#E8F5E9"
+                            android:layout_marginTop="8dp"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
-            <!-- Hourly Rate -->
+            <!-- Rate Information -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
+                    android:padding="20dp"
                     android:gravity="center_vertical">
 
-                    <TextView
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_rate_info"
+                        android:tint="#4CAF50"
+                        android:layout_marginEnd="16dp"/>
+
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Parking Rate"
-                        android:textSize="14sp"
-                        android:textColor="#2C3E50" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Parking Rate"
+                            android:textSize="14sp"
+                            android:textColor="#757575"
+                            android:layout_marginBottom="2px"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Standard hourly charges"
+                            android:textSize="12sp"
+                            android:textColor="#9E9E9E"/>
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvHourlyRate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₹20/hour"
-                        android:textSize="14sp"
-                        android:textColor="#27AE60"
-                        android:textStyle="bold" />
+                        android:text="₹20.00/hour"
+                        android:textSize="16sp"
+                        android:textColor="#1B5E20"
+                        android:textStyle="bold"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -286,12 +432,13 @@
                 android:layout_height="wrap_content"
                 android:text="Quick Actions"
                 android:textSize="18sp"
-                android:textColor="#2C3E50"
+                android:textColor="#1B5E20"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:layout_marginStart="24dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="16dp"/>
 
+            <!-- Grid Actions -->
             <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -303,156 +450,160 @@
                 android:layout_marginBottom="80dp">
 
                 <!-- Parking History -->
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnParkingHistory"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="140dp"
                     android:layout_margin="8dp"
                     android:layout_rowWeight="1"
                     android:layout_columnWeight="1"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:id="@+id/btnParkingHistory">
+                    android:focusable="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
 
                         <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:src="@drawable/ic_history"
-                            android:tint="#3498DB" />
+                            android:tint="#4CAF50"
+                            android:layout_marginBottom="12dp"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Parking History"
                             android:textSize="14sp"
-                            android:textColor="#2C3E50"
+                            android:textColor="#1B5E20"
                             android:textStyle="bold"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center" />
+                            android:gravity="center"/>
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Daily Charge -->
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnDailyCharge"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="140dp"
                     android:layout_margin="8dp"
                     android:layout_rowWeight="1"
                     android:layout_columnWeight="1"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:id="@+id/btnDailyCharge">
+                    android:focusable="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
 
                         <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/ic_money"
-                            android:tint="#27AE60" />
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_daily_charge"
+                            android:tint="#4CAF50"
+                            android:layout_marginBottom="12dp"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Daily Charge"
                             android:textSize="14sp"
-                            android:textColor="#2C3E50"
+                            android:textColor="#1B5E20"
                             android:textStyle="bold"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center" />
+                            android:gravity="center"/>
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Monthly Bill -->
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnMonthlyBill"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="140dp"
                     android:layout_margin="8dp"
                     android:layout_rowWeight="1"
                     android:layout_columnWeight="1"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:id="@+id/btnMonthlyBill">
+                    android:focusable="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
 
                         <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:src="@drawable/ic_payment"
-                            android:tint="#9B59B6" />
+                            android:tint="#4CAF50"
+                            android:layout_marginBottom="12dp"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Monthly Bill"
                             android:textSize="14sp"
-                            android:textColor="#2C3E50"
+                            android:textColor="#1B5E20"
                             android:textStyle="bold"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center" />
+                            android:gravity="center"/>
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Profile -->
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnProfile"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="140dp"
                     android:layout_margin="8dp"
                     android:layout_rowWeight="1"
                     android:layout_columnWeight="1"
-                    app:cardCornerRadius="16dp"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:id="@+id/btnProfile">
+                    android:focusable="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
 
                         <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:src="@drawable/ic_profile"
-                            android:tint="#E74C3C" />
+                            android:tint="#4CAF50"
+                            android:layout_marginBottom="12dp"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="My Profile"
                             android:textSize="14sp"
-                            android:textColor="#2C3E50"
+                            android:textColor="#1B5E20"
                             android:textStyle="bold"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center" />
+                            android:gravity="center"/>
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
             </GridLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
@@ -461,13 +612,19 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="68dp"
         android:layout_gravity="bottom"
         app:menu="@menu/bottom_nav_driver"
         app:itemIconTint="@color/bottom_nav_colors"
         app:itemTextColor="@color/bottom_nav_colors"
         app:labelVisibilityMode="labeled"
         android:background="#FFFFFF"
-        app:elevation="8dp" />
+        android:elevation="12dp">
 
+        <!-- Add background shape -->
+        <com.google.android.material.shape.MaterialShapeDrawable
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:shapeAppearanceOverlay="@style/RoundedTopCorners"/>
+    </com.google.android.material.bottomnavigation.BottomNavigationView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
