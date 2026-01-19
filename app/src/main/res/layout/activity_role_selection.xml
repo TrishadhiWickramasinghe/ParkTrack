@@ -214,7 +214,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="View parking history & charges"
+                            android:text="View parking history &amp; charges"
                             android:textSize="12sp"
                             android:textColor="#2E7D32"/>
                     </LinearLayout>
@@ -311,7 +311,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Manage parking system & operations"
+                    android:text="Manage parking system &amp; operations"
                     android:textSize="14sp"
                     android:textColor="#757575"
                     android:layout_marginTop="8dp"
@@ -346,7 +346,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Manage parking slots & availability"
+                            android:text="Manage parking slots &amp; availability"
                             android:textSize="12sp"
                             android:textColor="#E65100"/>
                     </LinearLayout>

@@ -1,9 +1,20 @@
 package com.example.car_park
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -11,9 +22,16 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.car_park.databinding.ActivityScanBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
@@ -26,12 +44,24 @@ class ScanActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var dbHelper: DatabaseHelper
+    private lateinit var cameraManager: CameraManager
     private var userId: Int = 0
     private var isScanning = false
     private var currentParkingId: Int = -1
+    private var camera: Camera? = null
+    private var flashEnabled = false
+    private var scanLineAnimator: ObjectAnimator? = null
+    private var scanMode = ScanMode.ENTRY // ENTRY or EXIT
+    private val scope = CoroutineScope(Dispatchers.Main)
+    private val handler = Handler(Looper.getMainLooper())
 
     companion object {
         private const val REQUEST_CAMERA_PERMISSION = 100
+        private const val SCAN_DELAY = 2000L // Delay between scans
+    }
+
+    enum class ScanMode {
+        ENTRY, EXIT
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,54 +69,165 @@ class ScanActivity : AppCompatActivity() {
         binding = ActivityScanBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Hide status bar for immersive experience
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+
         dbHelper = DatabaseHelper(this)
+        cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
 
         // Get user ID
-        val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        userId = try {
-            sharedPref.getInt("user_id", 0)
-        } catch (e: ClassCastException) {
-            val userIdStr = sharedPref.getString("user_id", "0") ?: "0"
-            userIdStr.toIntOrNull() ?: 0
-        }
+        userId = getUserIdFromPrefs()
 
-        // Initialize barcode scanner
-        barcodeScanner = BarcodeScanning.getClient()
+        // Initialize scanner
+        initializeScanner()
 
-        // Initialize camera executor
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        // Setup UI
+        setupUI()
+        setupClickListeners()
+        setupScanLineAnimation()
 
-        // Setup click listeners
-        binding.btnSwitchMode.setOnClickListener {
-            switchScanMode()
-        }
-
-        binding.btnManualEntry.setOnClickListener {
-            val carNumber = binding.etCarNumber.text.toString().trim()
-            if (carNumber.isNotEmpty()) {
-                processCarNumber(carNumber)
-            } else {
-                Toast.makeText(this, "Please enter car number", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        binding.btnBack.setOnClickListener {
-            finish()
-        }
-
-        // Check camera permission
-        if (allPermissionsGranted()) {
+        // Check permissions and start camera
+        if (checkPermissions()) {
             startCamera()
         } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CAMERA),
-                REQUEST_CAMERA_PERMISSION
-            )
+            requestPermissions()
         }
 
         // Check current parking status
-        checkCurrentParking()
+        checkCurrentParkingStatus()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::cameraExecutor.isInitialized && !cameraExecutor.isShutdown) {
+            startScanLineAnimation()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopScanLineAnimation()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            cameraExecutor.shutdown()
+            barcodeScanner.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun getUserIdFromPrefs(): Int {
+        val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        return try {
+            sharedPref.getInt("user_id", 0)
+        } catch (e: ClassCastException) {
+            sharedPref.getString("user_id", "0")?.toIntOrNull() ?: 0
+        }
+    }
+
+    private fun initializeScanner() {
+        barcodeScanner = BarcodeScanning.getClient(
+            com.google.mlkit.vision.barcode.BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build()
+        )
+        cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    private fun setupUI() {
+        // Setup initial state
+        binding.layoutScanStatus.visibility = View.GONE
+        binding.animationView.visibility = View.GONE
+        binding.ivTorchOverlay.visibility = View.GONE
+
+        // Set scan mode indicator
+        updateScanModeIndicator()
+    }
+
+    private fun setupClickListeners() {
+        binding.btnBack.setOnClickListener {
+            animateButtonClick(it)
+            finishWithAnimation()
+        }
+
+        binding.btnFlash.setOnClickListener {
+            animateButtonClick(it)
+            toggleFlash()
+        }
+
+        binding.btnManualEntry.setOnClickListener {
+            animateButtonClick(it)
+            processManualEntry()
+        }
+
+        binding.btnSwitchMode.setOnClickListener {
+            animateButtonClick(it)
+            toggleScanMode()
+        }
+
+        binding.btnDone.setOnClickListener {
+            animateButtonClick(it)
+            hideResultPanel()
+        }
+
+        binding.btnGallery.setOnClickListener {
+            animateButtonClick(it)
+            pickImageFromGallery()
+        }
+
+        binding.btnGenerateQR.setOnClickListener {
+            animateButtonClick(it)
+            showMyQRCode()
+        }
+
+        // Add long press listener for flash
+        binding.btnFlash.setOnLongClickListener {
+            showFlashOptions()
+            true
+        }
+    }
+
+    private fun setupScanLineAnimation() {
+        val scanFrame = binding.root.findViewById<androidx.cardview.widget.CardView>(R.id.scanFrame)
+        val scanLine = binding.scanLine
+
+        scanLineAnimator = ObjectAnimator.ofFloat(
+            scanLine,
+            "translationY",
+            -scanFrame.height / 2f,
+            scanFrame.height / 2f
+        ).apply {
+            duration = 2000
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = AccelerateDecelerateInterpolator()
+        }
+    }
+
+    private fun startScanLineAnimation() {
+        scanLineAnimator?.start()
+    }
+
+    private fun stopScanLineAnimation() {
+        scanLineAnimator?.cancel()
+    }
+
+    private fun checkPermissions(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestPermissions() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.CAMERA),
+            REQUEST_CAMERA_PERMISSION
+        )
     }
 
     override fun onRequestPermissionsResult(
@@ -96,18 +237,15 @@ class ScanActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (allPermissionsGranted()) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startCamera()
+                showSnackbar("Camera permission granted", Snackbar.LENGTH_SHORT, Color.GREEN)
             } else {
-                Toast.makeText(this, "Camera permission required", Toast.LENGTH_SHORT).show()
-                finish()
+                showSnackbar("Camera permission required", Snackbar.LENGTH_LONG, Color.RED)
+                finishWithAnimation()
             }
         }
     }
-
-    private fun allPermissionsGranted() =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -116,6 +254,7 @@ class ScanActivity : AppCompatActivity() {
             val cameraProvider = cameraProviderFuture.get()
 
             val preview = Preview.Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
                 .build()
                 .also {
                     it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
@@ -123,10 +262,15 @@ class ScanActivity : AppCompatActivity() {
 
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
                 .build()
                 .also {
                     it.setAnalyzer(cameraExecutor) { imageProxy ->
-                        analyzeImage(imageProxy)
+                        if (!isScanning) {
+                            analyzeImage(imageProxy)
+                        } else {
+                            imageProxy.close()
+                        }
                     }
                 }
 
@@ -134,130 +278,178 @@ class ScanActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                camera = cameraProvider.bindToLifecycle(
                     this,
                     cameraSelector,
                     preview,
                     imageAnalyzer
                 )
+
+                // Start scan line animation
+                startScanLineAnimation()
+
+                // Update flash button based on camera capabilities
+                updateFlashButtonState()
+
             } catch (exc: Exception) {
-                Toast.makeText(this, "Camera failed: ${exc.message}", Toast.LENGTH_SHORT).show()
+                exc.printStackTrace()
+                showSnackbar("Camera failed to start", Snackbar.LENGTH_LONG, Color.RED)
             }
         }, ContextCompat.getMainExecutor(this))
     }
 
     private fun analyzeImage(imageProxy: ImageProxy) {
-        if (isScanning) return
-
-        val mediaImage = imageProxy.image
-        if (mediaImage != null) {
-            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
-            isScanning = true
-
-            barcodeScanner.process(image)
-                .addOnSuccessListener { barcodes ->
-                    for (barcode in barcodes) {
-                        barcode.rawValue?.let { value ->
-                            runOnUiThread {
-                                processScannedCode(value)
-                            }
-                        }
-                    }
-                }
-                .addOnFailureListener {
-                    // Ignore errors
-                }
-                .addOnCompleteListener {
-                    imageProxy.close()
-                    isScanning = false
-                }
-        } else {
+        val mediaImage = imageProxy.image ?: run {
             imageProxy.close()
-            isScanning = false
+            return
+        }
+
+        val image = InputImage.fromMediaImage(
+            mediaImage,
+            imageProxy.imageInfo.rotationDegrees
+        )
+
+        isScanning = true
+
+        barcodeScanner.process(image)
+            .addOnSuccessListener { barcodes ->
+                processBarcodes(barcodes)
+            }
+            .addOnFailureListener { exception ->
+                exception.printStackTrace()
+            }
+            .addOnCompleteListener {
+                imageProxy.close()
+                handler.postDelayed({
+                    isScanning = false
+                }, SCAN_DELAY)
+            }
+    }
+
+    private fun processBarcodes(barcodes: List<Barcode>) {
+        if (barcodes.isNotEmpty()) {
+            val barcode = barcodes.first()
+            barcode.rawValue?.let { rawValue ->
+                runOnUiThread {
+                    processScannedData(rawValue, barcode)
+                }
+            }
         }
     }
 
-    private fun processScannedCode(code: String) {
-        // Extract car number from QR code or barcode
-        val carNumber = extractCarNumber(code)
+    private fun processScannedData(rawValue: String, barcode: Barcode) {
+        // Play scan success sound/vibration
+        playScanSuccessEffect()
+
+        // Extract vehicle number
+        val carNumber = extractVehicleNumber(rawValue)
 
         if (carNumber.isNotEmpty()) {
-            processCarNumber(carNumber)
+            // Animate scan line
+            animateScanSuccess()
+
+            // Process the vehicle
+            processVehicle(carNumber, barcode.boundingBox)
         } else {
-            Toast.makeText(this, "Invalid QR code", Toast.LENGTH_SHORT).show()
+            showSnackbar("Invalid QR code format", Snackbar.LENGTH_SHORT, Color.RED)
         }
     }
 
-    private fun extractCarNumber(code: String): String {
-        // Try to parse as JSON
+    private fun extractVehicleNumber(rawValue: String): String {
         return try {
-            val json = JSONObject(code)
-            json.getString("car_number")
+            // Try to parse as JSON
+            val json = JSONObject(rawValue)
+            json.optString("car_number", "").takeIf { it.isNotEmpty() } ?: rawValue
         } catch (e: Exception) {
-            // If not JSON, assume it's the car number directly
-            code
+            // If not JSON, return raw value
+            rawValue
         }
     }
 
-    private fun processCarNumber(carNumber: String) {
+    private fun processVehicle(carNumber: String, boundingBox: android.graphics.Rect?) {
         binding.tvScannedCarNumber.text = carNumber
         binding.tvScanTime.text = getCurrentDateTime()
 
-        val currentParking = dbHelper.getCurrentParkingForCar(carNumber)
+        // Check vehicle status
+        val isVehicleParked = dbHelper.isVehicleCurrentlyParked(carNumber)
 
-        if (currentParking.moveToFirst()) {
-            // Vehicle is already parked - process exit
-            val parkingId = currentParking.getInt(currentParking.getColumnIndex(DatabaseHelper.COL_ID))
-            processVehicleExit(parkingId, carNumber)
+        if (isVehicleParked) {
+            // Vehicle is parked - process exit
+            processVehicleExit(carNumber)
         } else {
             // Vehicle is not parked - process entry
             processVehicleEntry(carNumber)
         }
-        currentParking.close()
+
+        // Show result panel with animation
+        showResultPanel()
     }
 
     private fun processVehicleEntry(carNumber: String) {
-        val entryId = dbHelper.addParkingEntry(userId, carNumber)
+        scope.launch {
+            try {
+                val entryId = withContext(Dispatchers.IO) {
+                    dbHelper.addParkingEntry(userId, carNumber)
+                }
 
-        if (entryId != -1L) {
-            currentParkingId = entryId.toInt()
-            binding.tvScanStatus.text = "VEHICLE ENTERED"
-            binding.tvScanStatus.setTextColor(ContextCompat.getColor(this, R.color.green))
-            binding.layoutScanStatus.setBackgroundResource(R.drawable.bg_status_success)
+                if (entryId != -1L) {
+                    currentParkingId = entryId.toInt()
+                    showSuccessAnimation("VEHICLE ENTERED", R.drawable.ic_success, Color.GREEN)
 
-            // Update UI
-            binding.btnSwitchMode.text = "Switch to EXIT Mode"
+                    // Update scan mode to exit
+                    scanMode = ScanMode.EXIT
+                    updateScanModeIndicator()
 
-            // Show success animation
-            showSuccessAnimation()
-        } else {
-            Toast.makeText(this, "Failed to record entry", Toast.LENGTH_SHORT).show()
+                    // Show success message
+                    showSnackbar("Entry recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
+                } else {
+                    showErrorAnimation("ENTRY FAILED")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showErrorAnimation("ERROR OCCURRED")
+            }
         }
     }
 
-    private fun processVehicleExit(parkingId: Int, carNumber: String) {
-        // Calculate amount (example: $2 per hour)
-        val amount = calculateParkingAmount(parkingId.toLong())
+    private fun processVehicleExit(carNumber: String) {
+        scope.launch {
+            try {
+                val (parkingId, amount) = withContext(Dispatchers.IO) {
+                    val parkingId = dbHelper.getCurrentParkingIdForVehicle(carNumber)
+                    val amount = calculateParkingAmount(parkingId)
+                    Pair(parkingId, amount)
+                }
 
-        dbHelper.updateParkingExit(parkingId.toLong(), amount)
+                if (parkingId != -1L) {
+                    val success = withContext(Dispatchers.IO) {
+                        dbHelper.updateParkingExit(parkingId, amount)
+                    }
 
-        binding.tvScanStatus.text = "VEHICLE EXITED"
-        binding.tvScanStatus.setTextColor(ContextCompat.getColor(this, R.color.red))
-        binding.layoutScanStatus.setBackgroundResource(R.drawable.bg_status_exit)
+                    if (success) {
+                        showSuccessAnimation("VEHICLE EXITED", R.drawable.ic_exit, Color.parseColor("#FF9800"))
 
-        // Show amount
-        binding.tvScanAmount.text = "Amount: ₹${"%.2f".format(amount)}"
-        binding.tvScanAmount.visibility = View.VISIBLE
+                        // Show amount
+                        binding.tvScanAmount.text = "₹${"%.2f".format(amount)}"
+                        binding.layoutAmount.visibility = View.VISIBLE
 
-        // Update UI
-        binding.btnSwitchMode.text = "Switch to ENTRY Mode"
+                        // Update scan mode to entry
+                        scanMode = ScanMode.ENTRY
+                        updateScanModeIndicator()
 
-        // Show exit animation
-        showExitAnimation()
-
-        // Reset current parking
-        currentParkingId = -1
+                        // Show success message
+                        showSnackbar("Exit recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
+                    } else {
+                        showErrorAnimation("EXIT FAILED")
+                    }
+                } else {
+                    showErrorAnimation("NO ACTIVE PARKING")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showErrorAnimation("ERROR OCCURRED")
+            }
+        }
     }
 
     private fun calculateParkingAmount(parkingId: Long): Double {
@@ -265,62 +457,148 @@ class ScanActivity : AppCompatActivity() {
         var amount = 0.0
 
         if (cursor.moveToFirst()) {
-            val duration = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COL_DURATION))
-            // Calculate amount based on duration (₹20 per hour)
+            val duration = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_DURATION))
+            // Calculate amount: ₹20 per hour, minimum ₹20
             val hours = duration / 60.0
-            amount = hours * 20.0
+            amount = maxOf(hours * 20.0, 20.0)
         }
         cursor.close()
         return amount
     }
 
-    private fun switchScanMode() {
-        if (currentParkingId != -1) {
-            // Currently in entry mode, switch to exit
-            Toast.makeText(this, "Already recorded entry", Toast.LENGTH_SHORT).show()
-        } else {
-            // Check if vehicle is parked
-            val cursor = dbHelper.getCurrentParking(userId)
-            if (cursor.moveToFirst()) {
-                binding.btnSwitchMode.text = "Switch to EXIT Mode"
-            } else {
-                binding.btnSwitchMode.text = "Switch to ENTRY Mode"
+    private fun processManualEntry() {
+        val carNumber = binding.etCarNumber.text.toString().trim()
+
+        if (carNumber.isEmpty()) {
+            showSnackbar("Please enter vehicle number", Snackbar.LENGTH_SHORT, Color.RED)
+            return
+        }
+
+        if (carNumber.length < 4) {
+            showSnackbar("Invalid vehicle number", Snackbar.LENGTH_SHORT, Color.RED)
+            return
+        }
+
+        // Process the manual entry
+        processVehicle(carNumber, null)
+
+        // Clear input
+        binding.etCarNumber.text?.clear()
+    }
+
+    private fun toggleScanMode() {
+        scanMode = when (scanMode) {
+            ScanMode.ENTRY -> ScanMode.EXIT
+            ScanMode.EXIT -> ScanMode.ENTRY
+        }
+        updateScanModeIndicator()
+        showSnackbar("Mode: ${scanMode.name}", Snackbar.LENGTH_SHORT, Color.BLUE)
+    }
+
+    private fun updateScanModeIndicator() {
+        val modeText = when (scanMode) {
+            ScanMode.ENTRY -> "ENTRY MODE"
+            ScanMode.EXIT -> "EXIT MODE"
+        }
+        binding.btnSwitchMode.text = modeText
+
+        // Update button color based on mode
+        val color = when (scanMode) {
+            ScanMode.ENTRY -> R.color.green
+            ScanMode.EXIT -> R.color.orange
+        }
+        binding.btnSwitchMode.backgroundTintList =
+            android.content.res.ColorStateList.valueOf(ContextCompat.getColor(this, color))
+    }
+
+    private fun checkCurrentParkingStatus() {
+        scope.launch {
+            val hasActiveParking = withContext(Dispatchers.IO) {
+                dbHelper.hasActiveParking(userId)
             }
-            cursor.close()
+
+            if (hasActiveParking) {
+                scanMode = ScanMode.EXIT
+            } else {
+                scanMode = ScanMode.ENTRY
+            }
+            updateScanModeIndicator()
         }
     }
 
-    private fun checkCurrentParking() {
-        val cursor = dbHelper.getCurrentParking(userId)
-        if (cursor.moveToFirst()) {
-            currentParkingId = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COL_ID))
-            binding.btnSwitchMode.text = "Switch to EXIT Mode"
+    private fun toggleFlash() {
+        if (camera?.cameraInfo?.hasFlashUnit() == true) {
+            flashEnabled = !flashEnabled
+            camera?.cameraControl?.enableTorch(flashEnabled)
+            updateFlashButtonIcon()
+
+            if (flashEnabled) {
+                binding.ivTorchOverlay.visibility = View.VISIBLE
+                binding.ivTorchOverlay.animate().alpha(0.8f).setDuration(300).start()
+            } else {
+                binding.ivTorchOverlay.animate()
+                    .alpha(0f)
+                    .setDuration(300)
+                    .withEndAction {
+                        binding.ivTorchOverlay.visibility = View.GONE
+                    }
+                    .start()
+            }
         } else {
-            binding.btnSwitchMode.text = "Switch to ENTRY Mode"
+            showSnackbar("Flash not available", Snackbar.LENGTH_SHORT, Color.YELLOW)
         }
-        cursor.close()
     }
 
-    private fun getCurrentDateTime(): String {
-        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm:ss", Locale.getDefault())
-        return sdf.format(Date())
+    private fun updateFlashButtonIcon() {
+        val iconRes = if (flashEnabled) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+        binding.btnFlash.setIconResource(iconRes)
+
+        val color = if (flashEnabled) Color.YELLOW else Color.WHITE
+        binding.btnFlash.iconTint = android.content.res.ColorStateList.valueOf(color)
     }
 
-    private fun showSuccessAnimation() {
-        // You can add Lottie animation here
-        binding.animationView.setAnimation(R.raw.success_animation)
-        binding.animationView.playAnimation()
+    private fun updateFlashButtonState() {
+        val hasFlash = camera?.cameraInfo?.hasFlashUnit() == true
+        binding.btnFlash.visibility = if (hasFlash) View.VISIBLE else View.GONE
     }
 
-    private fun showExitAnimation() {
-        // You can add Lottie animation here
-        binding.animationView.setAnimation(R.raw.exit_animation)
-        binding.animationView.playAnimation()
+    private fun showFlashOptions() {
+        val options = arrayOf("Flash On", "Flash Off", "Auto Flash")
+
+        MaterialAlertDialogBuilder(this, R.style.RoundedDialog)
+            .setTitle("Flash Settings")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> enableFlash(true)
+                    1 -> enableFlash(false)
+                    2 -> showSnackbar("Auto flash coming soon", Snackbar.LENGTH_SHORT, Color.BLUE)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        cameraExecutor.shutdown()
-        barcodeScanner.close()
+    private fun enableFlash(enable: Boolean) {
+        flashEnabled = enable
+        camera?.cameraControl?.enableTorch(enable)
+        updateFlashButtonIcon()
     }
-}
+
+    private fun pickImageFromGallery() {
+        val intent = android.content.Intent(Intent.ACTION_PICK).apply {
+            type = "image/*"
+        }
+        startActivityForResult(intent, 101)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 101 && resultCode == RESULT_OK && data != null) {
+            val uri = data.data
+            uri?.let {
+                processImageFromGallery(it)
+            }
+        }
+    }
+
+    private fun processImageFromGallery(uri

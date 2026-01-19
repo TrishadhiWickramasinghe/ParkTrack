@@ -1,68 +1,492 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:background="#000000"
+    android:fitsSystemWindows="true">
 
-    <Button
-        android:id="@+id/btnBack"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Back" />
-
-    <Button
-        android:id="@+id/btnSwitchMode"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Switch Mode" />
-
-    <Button
-        android:id="@+id/btnManualEntry"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Manual Entry" />
-
-    <EditText
-        android:id="@+id/etCarNumber"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Car Number" />
-
+    <!-- Camera Preview -->
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="match_parent"/>
 
-    <TextView
-        android:id="@+id/tvScannedCarNumber"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <!-- Overlay Gradient -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/scanner_overlay_gradient"
+        android:alpha="0.3"/>
 
-    <TextView
-        android:id="@+id/tvScanTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/tvScanStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/tvScanAmount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <LinearLayout
-        android:id="@+id/layoutScanStatus"
+    <!-- Top App Bar -->
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical" />
+        android:background="@android:color/transparent"
+        android:elevation="0dp">
 
+        <androidx.appcompat.widget.Toolbar
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@android:color/transparent">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_centerVertical="true"
+                    app:backgroundTint="#4CAF50"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_back"
+                    app:iconSize="24dp"
+                    app:iconTint="#FFFFFF"
+                    android:elevation="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="QR Scanner"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFlash"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentEnd="true"
+                    app:backgroundTint="#2196F3"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_flash_off"
+                    app:iconSize="24dp"
+                    app:iconTint="#FFFFFF"
+                    android:elevation="4dp"/>
+            </RelativeLayout>
+        </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Scan Frame Overlay -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="24dp">
+
+        <!-- Scan Frame -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:layout_centerInParent="true"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@android:color/transparent">
+
+            <!-- Frame Border -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- Top Left Corner -->
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentStart="true"
+                    android:background="@drawable/scanner_corner_top_left"/>
+
+                <!-- Top Right Corner -->
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:background="@drawable/scanner_corner_top_right"/>
+
+                <!-- Bottom Left Corner -->
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentStart="true"
+                    android:background="@drawable/scanner_corner_bottom_left"/>
+
+                <!-- Bottom Right Corner -->
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentEnd="true"
+                    android:background="@drawable/scanner_corner_bottom_right"/>
+
+                <!-- Scan Line -->
+                <View
+                    android:id="@+id/scanLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="4dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/scan_line_gradient"
+                    android:visibility="visible"/>
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Scan Instructions -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/scanFrame"
+            android:layout_marginTop="32dp"
+            android:text="Align QR code within frame"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"/>
+    </RelativeLayout>
+
+    <!-- Bottom Action Panel -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/bottom_sheet_scanner">
+
+        <!-- Manual Entry Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Manual Entry"
+                    android:textSize="16sp"
+                    android:textColor="#1B5E20"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="16dp"/>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="#81C784"
+                    app:boxStrokeWidth="1dp"
+                    app:startIconDrawable="@drawable/ic_car_number"
+                    app:startIconTint="#4CAF50"
+                    app:hintTextColor="#4CAF50"
+                    android:hint="Vehicle Number">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCarNumber"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#2E7D32"
+                        android:textSize="16sp"
+                        android:inputType="textCapCharacters"
+                        android:maxLines="1"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnManualEntry"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="PROCESS MANUALLY"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    app:backgroundTint="#4CAF50"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_keyboard"
+                    app:iconSize="20dp"
+                    app:iconTint="#FFFFFF"
+                    android:elevation="4dp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Scan Result Panel -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/layoutScanStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <!-- Result Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/ivStatusIcon"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_success"
+                        android:tint="#4CAF50"
+                        android:layout_marginEnd="12dp"/>
+
+                    <TextView
+                        android:id="@+id/tvScanStatus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="SCAN SUCCESSFUL"
+                        android:textSize="18sp"
+                        android:textColor="#1B5E20"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"/>
+                </LinearLayout>
+
+                <!-- Scan Details -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#F5F9F5"
+                    android:padding="16dp"
+                    app:cornerRadius="12dp"
+                    android:layout_marginBottom="16dp">
+
+                    <!-- Vehicle Number -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_car"
+                            android:tint="#4CAF50"
+                            android:layout_marginEnd="12dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Vehicle Number"
+                            android:textSize="14sp"
+                            android:textColor="#757575"/>
+
+                        <TextView
+                            android:id="@+id/tvScannedCarNumber"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MH12AB1234"
+                            android:textSize="14sp"
+                            android:textColor="#1B5E20"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <!-- Scan Time -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_time"
+                            android:tint="#4CAF50"
+                            android:layout_marginEnd="12dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Scan Time"
+                            android:textSize="14sp"
+                            android:textColor="#757575"/>
+
+                        <TextView
+                            android:id="@+id/tvScanTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="12:30 PM"
+                            android:textSize="14sp"
+                            android:textColor="#1B5E20"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <!-- Amount (for exit) -->
+                    <LinearLayout
+                        android:id="@+id/layoutAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_money"
+                            android:tint="#4CAF50"
+                            android:layout_marginEnd="12dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Parking Charge"
+                            android:textSize="14sp"
+                            android:textColor="#757575"/>
+
+                        <TextView
+                            android:id="@+id/tvScanAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₹150.00"
+                            android:textSize="16sp"
+                            android:textColor="#1B5E20"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Action Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDone"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="DONE"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        app:backgroundTint="#4CAF50"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_check"
+                        app:iconSize="20dp"
+                        app:iconTint="#FFFFFF"
+                        android:elevation="4dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSwitchMode"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="SCAN AGAIN"
+                        android:textSize="14sp"
+                        android:textColor="#4CAF50"
+                        app:backgroundTint="#E8F5E9"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_scan_again"
+                        app:iconSize="20dp"
+                        app:iconTint="#4CAF50"
+                        android:elevation="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Bottom Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGallery"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="GALLERY"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#2196F3"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_gallery"
+                app:iconSize="20dp"
+                app:iconTint="#FFFFFF"
+                android:elevation="4dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGenerateQR"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="MY QR"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#9C27B0"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_qr_code"
+                app:iconSize="20dp"
+                app:iconTint="#FFFFFF"
+                android:elevation="4dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Lottie Animation -->
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/animationView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="false"/>
 
-</LinearLayout>
+    <!-- Torch Overlay -->
+    <ImageView
+        android:id="@+id/ivTorchOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone"
+        android:scaleType="centerCrop"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
