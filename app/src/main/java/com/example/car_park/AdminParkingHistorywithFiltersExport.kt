@@ -354,8 +354,8 @@ class AdminParkingLogsActivity : AppCompatActivity() {
     }
 
     private fun showRecordDetails(record: AdminParkingRecord) {
-        val dialog = AdminRecordDetailDialog(this, record)
-        dialog.show()
+        val dialog = AdminRecordDetailDialog.newInstance()
+        dialog.show(supportFragmentManager, "AdminRecordDetailDialog")
     }
 
     private fun exportToPDF() {
@@ -430,7 +430,7 @@ class AdminParkingLogsActivity : AppCompatActivity() {
                 Font(Font.FontFamily.HELVETICA, 10f, Font.BOLD, BaseColor.WHITE)))
             cell.horizontalAlignment = Element.ALIGN_CENTER
             cell.backgroundColor = greenColor
-            cell.padding = 8f
+            cell.setPadding(8f)
             table.addCell(cell)
         }
 
@@ -535,8 +535,8 @@ class AdminParkingLogsActivity : AppCompatActivity() {
     }
 
     private fun showQuickStats() {
-        val dialog = QuickStatsDialog(this, adapter.getCurrentList())
-        dialog.show()
+        val dialog = QuickStatsDialog.newInstance()
+        dialog.show(supportFragmentManager, "QuickStatsDialog")
     }
 
     // Animation methods

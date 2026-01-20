@@ -1,12 +1,15 @@
 package com.example.car_park
 
 import android.animation.ValueAnimator
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.view.animation.DecelerateInterpolator
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.car_park.databinding.ActivityMonthlyPaymentBinding
@@ -74,7 +77,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
     private fun setupMonthSpinner() {
         val months = getLast12Months()
         val adapter = MonthSpinnerAdapter(this, android.R.layout.simple_spinner_item, months)
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
         binding.spinnerMonth.adapter = adapter
 
@@ -165,12 +168,12 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateUIWithData(data: MonthlyStats) {
+    private fun updateUIWithData(data: MonthlyParkingData) {
         // Update month with animation
         animateTextChange(binding.tvMonth, selectedMonthYear)
 
         // Update total hours with count animation
-        animateCount(binding.tvTotalHours, 0, data.totalHours) { value ->
+        animateCount(binding.tvTotalHours, 0, data.totalHours.toInt()) { value ->
             "$value hours"
         }
 
@@ -210,7 +213,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
     }
 
     private fun showSummaryWithAnimation() {
-        binding.layoutEmptyState.visibility = View.GONE
+        // binding.layoutEmptyState?.visibility = View.GONE
         binding.layoutSummary.visibility = View.VISIBLE
 
         binding.layoutSummary.apply {
@@ -231,17 +234,17 @@ class MonthlyPaymentActivity : AppCompatActivity() {
     private fun showEmptyStateWithAnimation() {
         binding.layoutSummary.visibility = View.GONE
 
-        binding.layoutEmptyState.visibility = View.VISIBLE
-        binding.layoutEmptyState.alpha = 0f
-        binding.layoutEmptyState.scaleX = 0.9f
-        binding.layoutEmptyState.scaleY = 0.9f
+        // binding.layoutEmptyState?.visibility = View.VISIBLE
+        // binding.layoutEmptyState?.alpha = 0f
+        // binding.layoutEmptyState?.scaleX = 0.9f
+        // binding.layoutEmptyState?.scaleY = 0.9f
 
-        binding.layoutEmptyState.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(500)
-            .start()
+        // binding.layoutEmptyState?.animate()
+        //     .alpha(1f)
+        //     .scaleX(1f)
+        //     .scaleY(1f)
+        //     .setDuration(500)
+        //     .start()
 
         binding.tvNoData.text = "No parking records for $selectedMonthYear"
     }
@@ -280,10 +283,10 @@ class MonthlyPaymentActivity : AppCompatActivity() {
             try {
                 val (month, year) = parseMonthYear(selectedMonthYear)
                 val dailyStats = withContext(Dispatchers.IO) {
-                    dbHelper.getDailyBreakdownForMonth(userId, month, year)
+                    dbHelper.getDailyBreakdownForMonth(year, month)
                 }
 
-                val dialog = MonthlySummaryDialog(this@MonthlyPaymentActivity, selectedMonthYear, dailyStats)
+                val dialog = MonthlySummaryDialog(this@MonthlyPaymentActivity, selectedMonthYear, dailyStats as List<DailyStat>)
                 dialog.show()
 
             } catch (e: Exception) {
@@ -319,7 +322,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         }
     }
 
-    private fun generatePdfSummary(data: MonthlyStats, monthYear: String) {
+    private fun generatePdfSummary(data: MonthlyParkingData, monthYear: String) {
         // Implement PDF generation using iText or other library
         // Example: Create PDF with monthly summary
     }
@@ -333,7 +336,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
                 }
 
                 if (monthlyData.totalAmount > 0) {
-                    showPaymentDialog(monthlyData.totalAmount, monthYear)
+                    showPaymentDialog(monthlyData.totalAmount, selectedMonthYear)
                 } else {
                     showSnackbar("No amount due for this month", Snackbar.LENGTH_SHORT, Color.YELLOW)
                 }
@@ -440,7 +443,7 @@ class MonthSpinnerAdapter(
     private val months: List<String>
 ) : ArrayAdapter<String>(context, resource, months) {
 
-    override fun getView(position: Int, convertView: View?, parent: android.widget.ViewGroup): View {
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = super.getView(position, convertView, parent)
         (view as? android.widget.TextView)?.apply {
             text = months[position]
@@ -451,7 +454,7 @@ class MonthSpinnerAdapter(
         return view
     }
 
-    override fun getDropDownView(position: Int, convertView: View?, parent: android.widget.ViewGroup): View {
+    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = super.getDropDownView(position, convertView, parent)
         (view as? android.widget.TextView)?.apply {
             text = months[position]
@@ -503,7 +506,7 @@ class MonthlySummaryDialog(
 
 // Data classes
 data class MonthlyStats(
-    val totalHours: Int,
+    val totalHours: Double,
     val totalAmount: Double,
     val paymentStatus: String
 )

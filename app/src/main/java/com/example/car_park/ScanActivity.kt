@@ -3,10 +3,12 @@ package com.example.car_park
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -32,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
@@ -368,7 +371,7 @@ class ScanActivity : AppCompatActivity() {
 
     private fun processVehicle(carNumber: String, boundingBox: android.graphics.Rect?) {
         binding.tvScannedCarNumber.text = carNumber
-        binding.tvScanTime.text = getCurrentDateTime()
+        binding.tvScanTime.text = dbHelper.getCurrentDateTime()
 
         // Check vehicle status
         val isVehicleParked = dbHelper.isVehicleCurrentlyParked(carNumber)
@@ -394,7 +397,8 @@ class ScanActivity : AppCompatActivity() {
 
                 if (entryId != -1L) {
                     currentParkingId = entryId.toInt()
-                    showSuccessAnimation("VEHICLE ENTERED", R.drawable.ic_success, Color.GREEN)
+                    // showSuccessAnimation("VEHICLE ENTERED", R.drawable.ic_success, Color.GREEN)
+                    showSuccessAnimation()
 
                     // Update scan mode to exit
                     scanMode = ScanMode.EXIT
@@ -403,11 +407,11 @@ class ScanActivity : AppCompatActivity() {
                     // Show success message
                     showSnackbar("Entry recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
                 } else {
-                    showErrorAnimation("ENTRY FAILED")
+                    showErrorAnimation()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                showErrorAnimation("ERROR OCCURRED")
+                showErrorAnimation()
             }
         }
     }
@@ -415,39 +419,38 @@ class ScanActivity : AppCompatActivity() {
     private fun processVehicleExit(carNumber: String) {
         scope.launch {
             try {
-                val (parkingId, amount) = withContext(Dispatchers.IO) {
-                    val parkingId = dbHelper.getCurrentParkingIdForVehicle(carNumber)
-                    val amount = calculateParkingAmount(parkingId)
-                    Pair(parkingId, amount)
+                val parkingId = withContext(Dispatchers.IO) {
+                    dbHelper.getCurrentParkingIdForVehicle(carNumber)
                 }
-
+                
                 if (parkingId != -1L) {
-                    val success = withContext(Dispatchers.IO) {
+                    val amount = withContext(Dispatchers.IO) {
+                        calculateParkingAmount(parkingId)
+                    }
+                    
+                    withContext(Dispatchers.IO) {
                         dbHelper.updateParkingExit(parkingId, amount)
                     }
 
-                    if (success) {
-                        showSuccessAnimation("VEHICLE EXITED", R.drawable.ic_exit, Color.parseColor("#FF9800"))
+                    // showSuccessAnimation("VEHICLE EXITED", R.drawable.ic_exit, Color.parseColor("#FF9800"))
+                    showSuccessAnimation()
 
-                        // Show amount
-                        binding.tvScanAmount.text = "₹${"%.2f".format(amount)}"
-                        binding.layoutAmount.visibility = View.VISIBLE
+                    // Show amount
+                    binding.tvScanAmount.text = "₹${"%.2f".format(amount)}"
+                    binding.layoutAmount.visibility = View.VISIBLE
 
-                        // Update scan mode to entry
-                        scanMode = ScanMode.ENTRY
-                        updateScanModeIndicator()
+                    // Update scan mode to entry
+                    scanMode = ScanMode.ENTRY
+                    updateScanModeIndicator()
 
-                        // Show success message
-                        showSnackbar("Exit recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
-                    } else {
-                        showErrorAnimation("EXIT FAILED")
-                    }
+                    // Show success message
+                    showSnackbar("Exit recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
                 } else {
-                    showErrorAnimation("NO ACTIVE PARKING")
+                    showErrorAnimation()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                showErrorAnimation("ERROR OCCURRED")
+                showErrorAnimation()
             }
         }
     }
@@ -601,4 +604,7 @@ class ScanActivity : AppCompatActivity() {
         }
     }
 
-    private fun processImageFromGallery(uri
+    private fun processImageFromGallery(uri: Uri) {
+        // Process image from gallery
+    }
+}

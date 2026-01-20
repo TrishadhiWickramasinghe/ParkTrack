@@ -91,12 +91,11 @@ class RoleSelectionActivity : AppCompatActivity() {
         binding.cardAdmin.translationY = 100f
 
         // Hide logo initially
-        val logoCard = binding.root.findViewById<MaterialCardView>(R.id.logoCard)
-        logoCard?.apply {
-            scaleX = 0f
-            scaleY = 0f
-            alpha = 0f
-        }
+        // binding.logoCard?.apply {
+        //     scaleX = 0f
+        //     scaleY = 0f
+        //     alpha = 0f
+        // }
 
         // Start entrance animations
         startEntranceAnimations()
@@ -104,17 +103,16 @@ class RoleSelectionActivity : AppCompatActivity() {
 
     private fun startEntranceAnimations() {
         // Animate logo
-        val logoCard = binding.root.findViewById<MaterialCardView>(R.id.logoCard)
-        logoCard?.apply {
-            animate()
-                .scaleX(1f)
-                .scaleY(1f)
-                .alpha(1f)
-                .setDuration(800)
-                .setInterpolator(OvershootInterpolator(1.2f))
-                .setStartDelay(300)
-                .start()
-        }
+        // binding.logoCard?.apply {
+        //     animate()
+        //         .scaleX(1f)
+        //         .scaleY(1f)
+        //         .alpha(1f)
+        //         .setDuration(800)
+        //         .setInterpolator(OvershootInterpolator(1.2f))
+        //         .setStartDelay(300)
+        //         .start()
+        // }
 
         // Animate title and subtitle
         binding.title.alpha = 0f
@@ -209,16 +207,14 @@ class RoleSelectionActivity : AppCompatActivity() {
 
     private fun setupButtonListeners() {
         // Driver select button
-        val driverButton = binding.cardDriver.findViewById<com.google.android.material.button.MaterialButton>(R.id.driverSelectButton)
-        driverButton?.setOnClickListener {
+        binding.cardDriver.setOnClickListener {
             if (!isAnimating) {
                 selectRole("driver", binding.cardDriver)
             }
         }
 
         // Admin select button
-        val adminButton = binding.cardAdmin.findViewById<com.google.android.material.button.MaterialButton>(R.id.adminSelectButton)
-        adminButton?.setOnClickListener {
+        binding.cardAdmin.setOnClickListener {
             if (!isAnimating) {
                 selectRole("admin", binding.cardAdmin)
             }
@@ -266,13 +262,13 @@ class RoleSelectionActivity : AppCompatActivity() {
         animateBackgroundColor(card, originalColor, highlightColor)
 
         // Animate check icon
-        val checkIcon = card.findViewById<android.widget.ImageView>(R.id.icCheck)
-        checkIcon?.apply {
-            visibility = View.VISIBLE
-            scaleX = 0f
-            scaleY = 0f
-            alpha = 0f
+        // Check icon animation handled by card selection visual feedback
+        card.apply {
+            scaleX = 0.95f
+            scaleY = 0.95f
             animate()
+                .scaleX(1f)
+                .scaleY(1f)
                 .scaleX(1f)
                 .scaleY(1f)
                 .alpha(1f)
@@ -386,7 +382,8 @@ class RoleSelectionActivity : AppCompatActivity() {
 
         // Reset check icons
         listOf(binding.cardDriver, binding.cardAdmin).forEach { card ->
-            card.findViewById<android.widget.ImageView>(R.id.icCheck)?.visibility = View.GONE
+            card.scaleX = 1f
+            card.scaleY = 1f
         }
     }
 

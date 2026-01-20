@@ -39,10 +39,11 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         // Setup notification icon click
-        val notificationIcon = binding.toolbar.findViewById<View>(R.id.notification_icon)
-        notificationIcon?.setOnClickListener {
-            startActivity(Intent(this, NotificationsActivity::class.java))
-        }
+        // TODO: Add notification_icon to toolbar layout
+        // val notificationIcon = binding.toolbar.findViewById<View>(R.id.notification_icon)
+        // notificationIcon?.setOnClickListener {
+        //     startActivity(Intent(this, NotificationsActivity::class.java))
+        // }
 
         // Setup click listeners for quick actions with animations
         setupCardClickListeners()
@@ -88,13 +89,14 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         // Add New Vehicle Card (from the new UI)
-        val addVehicleCard = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(
-            R.id.cardAddVehicle ?: View.generateViewId()
-        )
-        addVehicleCard?.setOnClickListener {
-            animateCardClick(it)
-            startActivity(Intent(this, AddVehicleActivity::class.java))
-        }
+        // TODO: Add cardAddVehicle to layout
+        // val addVehicleCard = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(
+        //     R.id.cardAddVehicle
+        // )
+        // addVehicleCard?.setOnClickListener {
+        //     animateCardClick(it)
+        //     startActivity(Intent(this, AddVehicleActivity::class.java))
+        // }
     }
 
     private fun setupBottomNavigation() {

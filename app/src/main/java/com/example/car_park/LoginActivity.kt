@@ -60,17 +60,16 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // Animate logo and header
-        val logoContainer = binding.root.findViewById<MaterialCardView>(R.id.logoContainer)
-        logoContainer?.apply {
-            translationY = -50f
-            alpha = 0f
-            animate()
-                .translationY(0f)
-                .alpha(1f)
-                .setDuration(600)
-                .setStartDelay(100)
-                .start()
-        }
+        // binding.logoContainer?.apply {
+        //     translationY = -50f
+        //     alpha = 0f
+        //     animate()
+        //         .translationY(0f)
+        //         .alpha(1f)
+        //         .setDuration(600)
+        //         .setStartDelay(100)
+        //         .start()
+        // }
     }
 
     private fun setupTextFields() {
@@ -261,7 +260,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun navigateToSignUp() {
-        val intent = Intent(this, SignUpActivity::class.java)
+        val intent = Intent(this, SignupActivity::class.java)
         startActivity(intent)
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }

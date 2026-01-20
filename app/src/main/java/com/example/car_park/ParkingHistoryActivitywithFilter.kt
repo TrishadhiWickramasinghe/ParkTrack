@@ -1,11 +1,14 @@
 package com.example.car_park
 
 import android.animation.ValueAnimator
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -85,13 +88,8 @@ class ParkingHistoryActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = ParkingHistoryAdapter(
-            context = this,
-            onClickListener = { record ->
+            onItemClick = { record ->
                 showRecordDetails(record)
-            },
-            onLongClickListener = { record ->
-                showRecordOptions(record)
-                true
             }
         )
 
@@ -130,7 +128,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
     private fun setupFilterSpinner() {
         val filterOptions = arrayOf("All Time", "Today", "This Week", "This Month")
         val adapter = FilterSpinnerAdapter(this, android.R.layout.simple_spinner_item, filterOptions)
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
         binding.spinnerFilter.adapter = adapter
 
@@ -183,7 +181,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
                 binding.swipeRefresh.isRefreshing = true
 
                 // Show loading state
-                binding.layoutSummary?.alpha = 0.8f
+                // binding.layoutSummary?.alpha = 0.8f
 
                 val records = withContext(Dispatchers.IO) {
                     loadRecordsFromDatabase()
@@ -203,7 +201,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
                 showSnackbar("Failed to load parking history", Snackbar.LENGTH_SHORT, Color.RED)
             } finally {
                 binding.swipeRefresh.isRefreshing = false
-                binding.layoutSummary?.animate()?.alpha(1f)?.setDuration(300)?.start()
+                // binding.layoutSummary?.animate()?.alpha(1f)?.setDuration(300)?.start()
             }
         }
     }
@@ -289,25 +287,25 @@ class ParkingHistoryActivity : AppCompatActivity() {
 
     private fun updateSummaryWithAnimation(records: List<ParkingRecord>) {
         val newTotalRecords = records.size
-        val newTotalHours = records.sumOf { (it.duration ?: 0) } / 60
+        val newTotalHours = records.sumOf { (it.duration ?: 0).toDouble() } / 60.0
         val newTotalAmount = records.sumOf { it.amount ?: 0.0 }
 
         // Animate counts
         if (newTotalRecords != totalRecords) {
-            animateCount(binding.tvTotalRecords, totalRecords, newTotalRecords, "")
+            animateCount(binding.tvTotalRecords, totalRecords, newTotalRecords) { "$it" }
             totalRecords = newTotalRecords
         }
 
-        if (newTotalHours != totalHours) {
-            animateCount(binding.tvTotalHours, totalHours, newTotalHours) { value ->
+        if (newTotalHours.toInt() != totalHours) {
+            animateCount(binding.tvTotalHours, totalHours, newTotalHours.toInt()) { value ->
                 "${value}h"
             }
-            totalHours = newTotalHours
+            totalHours = newTotalHours.toInt()
         }
 
         if (newTotalAmount != totalAmount) {
-            animateCount(binding.tvTotalAmount, totalAmount, newTotalAmount, "₹") { value ->
-                String.format("₹%.2f", value)
+            animateCount(binding.tvTotalAmount, totalAmount.toInt(), newTotalAmount.toInt()) { value ->
+                String.format("₹%.2f", value.toDouble())
             }
             totalAmount = newTotalAmount
         }
@@ -315,21 +313,21 @@ class ParkingHistoryActivity : AppCompatActivity() {
 
     private fun updateEmptyState(isEmpty: Boolean) {
         if (isEmpty) {
-            binding.layoutEmptyState.visibility = View.VISIBLE
+            // binding.layoutEmptyState?.visibility = View.VISIBLE
             binding.recyclerView.visibility = View.GONE
 
             // Animate empty state
-            binding.layoutEmptyState.alpha = 0f
-            binding.layoutEmptyState.scaleX = 0.9f
-            binding.layoutEmptyState.scaleY = 0.9f
-            binding.layoutEmptyState.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(500)
-                .start()
+            // binding.layoutEmptyState?.alpha = 0f
+            // binding.layoutEmptyState?.scaleX = 0.9f
+            // binding.layoutEmptyState?.scaleY = 0.9f
+            // binding.layoutEmptyState?.animate()
+            //     .alpha(1f)
+            //     .scaleX(1f)
+            //     .scaleY(1f)
+            //     .setDuration(500)
+            //     .start()
         } else {
-            binding.layoutEmptyState.visibility = View.GONE
+            // binding.layoutEmptyState?.visibility = View.GONE
             binding.recyclerView.visibility = View.VISIBLE
         }
     }
@@ -474,7 +472,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
     }
 
     private fun buildSummaryText(records: List<ParkingRecord>): String {
-        val totalHours = records.sumOf { (it.duration ?: 0) } / 60
+        val totalHours = records.sumOf { (it.duration ?: 0).toDouble() } / 60.0
         val totalAmount = records.sumOf { it.amount ?: 0.0 }
 
         return """
@@ -487,7 +485,7 @@ class ParkingHistoryActivity : AppCompatActivity() {
             
             Last 5 Records:
             ${records.take(5).joinToString("\n") {
-            "- ${formatDate(it.entryTime ?: "")}: ${(it.duration ?: 0)/60}h - ₹${"%.2f".format(it.amount ?: 0.0)}"
+            "- ${it.entryTime ?: ""}: ${(it.duration ?: 0)/60}h - ₹${"%.2f".format(it.amount ?: 0.0)}"
         }}
             
             Generated from Car Park App
@@ -581,10 +579,10 @@ class FilterSpinnerAdapter(
     private val filters: Array<String>
 ) : ArrayAdapter<String>(context, resource, filters) {
 
-    override fun getView(position: Int, convertView: View?, parent: android.widget.ViewGroup): View {
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = super.getView(position, convertView, parent)
         (view as? android.widget.TextView)?.apply {
-            text = filters[position]
+            // text = filters[position]
             setTextColor(ContextCompat.getColor(context, R.color.dark_green))
             textSize = 16f
             typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
@@ -592,14 +590,18 @@ class FilterSpinnerAdapter(
         return view
     }
 
-    override fun getDropDownView(position: Int, convertView: View?, parent: android.widget.ViewGroup): View {
+    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = super.getDropDownView(position, convertView, parent)
         (view as? android.widget.TextView)?.apply {
-            text = filters[position]
+            text = filters[position] as CharSequence
             setTextColor(ContextCompat.getColor(context, R.color.dark_green))
             textSize = 14f
             setPadding(16, 12, 16, 12)
-            background = ContextCompat.getDrawable(context, R.drawable.bg_spinner_item)
+            try {
+                background = ContextCompat.getDrawable(context, R.drawable.bg_spinner_item)
+            } catch (e: Exception) {
+                // Ignore if drawable not found
+            }
         }
         return view
     }

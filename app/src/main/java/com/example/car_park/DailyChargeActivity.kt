@@ -99,7 +99,13 @@ class DailyChargeActivity : AppCompatActivity() {
 
                 val dateString = formatDateForDB(date)
                 val dailyData = withContext(Dispatchers.IO) {
-                    dbHelper.getDailyParkingStats(userId, dateString)
+                    val data = dbHelper.getDailyParkingStats(userId, dateString)
+                    // Convert DailyParkingData to DailyStats
+                    DailyStats(
+                        totalMinutes = data.totalMinutes,
+                        totalAmount = data.totalAmount,
+                        entryCount = 0 // Default to 0 as it's not provided
+                    )
                 }
 
                 // Update UI with animations

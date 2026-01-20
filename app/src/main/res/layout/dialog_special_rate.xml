@@ -289,7 +289,6 @@
                     app:startIconDrawable="@drawable/ic_vehicle_types"
                     app:startIconTint="#4CAF50"
                     app:helperText="Separate with commas (Car, Bike, SUV)"
-                    app:helperTextColor="#81C784"
                     app:hintTextColor="#4CAF50"
                     app:errorEnabled="true">
 
@@ -320,7 +319,6 @@
                     app:startIconDrawable="@drawable/ic_calendar_days"
                     app:startIconTint="#4CAF50"
                     app:helperText="Separate with commas (Mon, Tue, Wed...)"
-                    app:helperTextColor="#81C784"
                     app:hintTextColor="#4CAF50"
                     app:errorEnabled="true">
 
@@ -446,6 +444,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/buttonContainer"
-        app:layout_marginTop="20dp" />
+        android:layout_marginTop="20dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

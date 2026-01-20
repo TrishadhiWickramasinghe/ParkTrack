@@ -5,7 +5,9 @@ data class ParkingRecord(
     val carNumber: String,
     val entryTime: String,
     val exitTime: String?,
-    val duration: String?,
+    val duration: Int?,
     val amount: Double?,
-    val status: String
+    val status: String,
+    val driverName: String? = null,
+    val phone: String? = null
 )

@@ -167,7 +167,13 @@ class DriverDashboardActivity : AppCompatActivity() {
         return withContext(Dispatchers.IO) {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val today = sdf.format(Date())
-            dbHelper.getDailyParkingStats(userId, today)
+            val data = dbHelper.getDailyParkingStats(userId, today)
+            // Convert DailyParkingData to DailyStats
+            DailyStats(
+                totalMinutes = data.totalMinutes,
+                totalAmount = data.totalAmount,
+                entryCount = 0 // Default to 0 as it's not provided
+            )
         }
     }
 
@@ -283,9 +289,9 @@ class DriverDashboardActivity : AppCompatActivity() {
     private fun updateTodayStats(dailyData: DailyStats) {
         // Update hours with animation
         val hoursText = formatDuration(dailyData.totalMinutes)
-        animateCount(binding.tvTodayHours, 0, dailyData.totalMinutes / 60, "") { value ->
+        animateCount(binding.tvTodayHours, 0.0, dailyData.totalMinutes / 60.0, "") { value ->
             val mins = dailyData.totalMinutes % 60
-            "${value}h ${mins}m"
+            "${value.toInt()}h ${mins}m"
         }
 
         // Update charge with animation
@@ -337,18 +343,24 @@ class DriverDashboardActivity : AppCompatActivity() {
         scope.launch {
             try {
                 val success = withContext(Dispatchers.IO) {
-                    // Update exit time in database
-                    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                    val exitTime = sdf.format(Date())
+                    try {
+                        // Update exit time in database
+                        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                        val exitTime = sdf.format(Date())
 
-                    // Calculate duration and amount
-                    val entry = sdf.parse(parkingEntryTime)
-                    val exit = sdf.parse(exitTime)
-                    val minutes = ((exit.time - entry.time) / (1000 * 60)).toInt()
-                    val amount = calculateAmount(minutes)
+                        // Calculate duration and amount
+                        val entry = sdf.parse(parkingEntryTime)
+                        val exit = sdf.parse(exitTime)
+                        val minutes = ((exit.time - entry.time) / (1000 * 60)).toInt()
+                        val amount = calculateAmount(minutes)
 
-                    // Update database
-                    dbHelper.updateParkingExit(userId, exitTime, minutes, amount)
+                        // Update database - convert to proper types
+                        dbHelper.updateParkingExit(userId.toLong(), amount)
+                        true // Success
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        false // Failure
+                    }
                 }
 
                 if (success) {

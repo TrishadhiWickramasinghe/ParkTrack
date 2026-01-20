@@ -72,17 +72,11 @@ class RatesManagementActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = RatesAdapter(
-            context = this,
-            rates = rateList,
-            onRateClick = { rate ->
+            onEditClick = { rate, position ->
                 showEditRateDialog(rate)
             },
-            onToggleActive = { rate, isActive ->
-                toggleRateActive(rate, isActive)
-            },
-            onRateLongClick = { rate ->
+            onDeleteClick = { rate, position ->
                 showRateOptionsDialog(rate)
-                true
             }
         )
 
@@ -185,7 +179,7 @@ class RatesManagementActivity : AppCompatActivity() {
         scope.launch {
             try {
                 binding.swipeRefresh.isRefreshing = true
-                binding.layoutEmptyState?.visibility = View.GONE
+                // binding.layoutEmptyState?.visibility = View.GONE
 
                 val ratesJson = withContext(Dispatchers.IO) {
                     loadRatesFromStorage()
@@ -207,15 +201,15 @@ class RatesManagementActivity : AppCompatActivity() {
 
     private suspend fun loadRatesFromStorage(): String {
         return withContext(Dispatchers.IO) {
-            // Try to load from database first
-            val dbRates = dbHelper.getParkingRates()
-            if (dbRates.isNotEmpty()) {
-                dbRates
-            } else {
+            // Try to load from database first, but for now use shared preferences
+            // val dbRates = dbHelper.getParkingRates()
+            // if (dbRates.isNotEmpty()) {
+            //     dbRates
+            // } else {
                 // Fallback to shared preferences
                 getSharedPreferences("parking_rates", MODE_PRIVATE)
                     .getString("rates", getDefaultRates()) ?: getDefaultRates()
-            }
+            // }
         }
     }
 
@@ -252,8 +246,8 @@ class RatesManagementActivity : AppCompatActivity() {
                     isActive = rateJson.getBoolean("active"),
                     startTime = rateJson.getString("start_time"),
                     endTime = rateJson.getString("end_time"),
-                    vehicleTypes = rateJson.getString("vehicle_types"),
-                    daysOfWeek = rateJson.getString("days"),
+                    vehicleTypes = rateJson.getString("vehicle_types").split(",").map { it.trim() },
+                    daysOfWeek = rateJson.getString("days").split(",").map { it.trim() },
                     dailyMax = rateJson.optDouble("daily_max", 100.0)
                 ))
             }
@@ -270,11 +264,10 @@ class RatesManagementActivity : AppCompatActivity() {
         if (rateList.isEmpty()) {
             rateList.clear()
             rateList.addAll(newList)
-            adapter.submitList(rateList.toList()) {
-                // Animate items after submission
-                binding.recyclerView.scheduleLayoutAnimation()
-                updateEmptyState()
-            }
+            adapter.submitList(rateList.toList())
+            // Animate items after submission
+            binding.recyclerView.scheduleLayoutAnimation()
+            updateEmptyState()
         } else {
             // Animate changes
             rateList.clear()
@@ -286,20 +279,20 @@ class RatesManagementActivity : AppCompatActivity() {
 
     private fun updateEmptyState() {
         if (rateList.isEmpty()) {
-            binding.layoutEmptyState?.visibility = View.VISIBLE
+            // binding.layoutEmptyState?.visibility = View.VISIBLE
             binding.recyclerView.visibility = View.GONE
 
-            binding.layoutEmptyState?.alpha = 0f
-            binding.layoutEmptyState?.scaleX = 0.9f
-            binding.layoutEmptyState?.scaleY = 0.9f
-            binding.layoutEmptyState?.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(500)
-                .start()
+            // binding.layoutEmptyState?.alpha = 0f
+            // binding.layoutEmptyState?.scaleX = 0.9f
+            // binding.layoutEmptyState?.scaleY = 0.9f
+            // binding.layoutEmptyState?.animate()
+            //     .alpha(1f)
+            //     .scaleX(1f)
+            //     .scaleY(1f)
+            //     .setDuration(500)
+            //     .start()
         } else {
-            binding.layoutEmptyState?.visibility = View.GONE
+            // binding.layoutEmptyState?.visibility = View.GONE
             binding.recyclerView.visibility = View.VISIBLE
         }
     }
@@ -376,13 +369,13 @@ class RatesManagementActivity : AppCompatActivity() {
         val dialogBinding = DialogRateEditBinding.inflate(layoutInflater)
 
         // Configure for standard rate
-        dialogBinding.tvDialogTitle.text = "Add Standard Rate"
+        // dialogBinding.tvDialogTitle.text = "Add Standard Rate"
         dialogBinding.etRateName.hint = "Standard Rate Name"
-        dialogBinding.etRateValue.hint = "Hourly Rate (₹)"
-        dialogBinding.tilRateValue.prefixText = "₹"
-        dialogBinding.tilDescription.hint = "Description (optional)"
-        dialogBinding.layoutTimeRange.visibility = View.GONE
-        dialogBinding.layoutAdvanced.visibility = View.GONE
+        dialogBinding.etRateValue.hint = "Hourly Rate (\u20b9)"
+        // dialogBinding.tilRateValue.prefixText = "\u20b9"
+        // dialogBinding.tilDescription.hint = "Description (optional)"
+        // dialogBinding.layoutTimeRange.visibility = View.GONE
+        // dialogBinding.layoutAdvanced.visibility = View.GONE
 
         val dialog = MaterialAlertDialogBuilder(this, R.style.RoundedDialog)
             .setView(dialogBinding.root)
@@ -573,8 +566,8 @@ class RatesManagementActivity : AppCompatActivity() {
             isActive = view.findViewById<android.widget.Switch>(R.id.switchActive).isChecked,
             startTime = view.findViewById<android.widget.EditText>(R.id.etStartTime).text.toString().trim(),
             endTime = view.findViewById<android.widget.EditText>(R.id.etEndTime).text.toString().trim(),
-            vehicleTypes = view.findViewById<android.widget.EditText>(R.id.etVehicleTypes).text.toString().trim(),
-            daysOfWeek = view.findViewById<android.widget.EditText>(R.id.etDays).text.toString().trim(),
+            vehicleTypes = view.findViewById<android.widget.EditText>(R.id.etVehicleTypes).text.toString().trim().split(",").map { it.trim() },
+            daysOfWeek = view.findViewById<android.widget.EditText>(R.id.etDays).text.toString().trim().split(",").map { it.trim() },
             dailyMax = view.findViewById<android.widget.EditText>(R.id.etDailyMax)?.text?.toString()?.toDoubleOrNull() ?: 100.0
         )
     }
@@ -585,15 +578,15 @@ class RatesManagementActivity : AppCompatActivity() {
 
     private fun showInputError(dialogBinding: DialogRateEditBinding, name: String, rate: Double) {
         if (name.isEmpty()) {
-            dialogBinding.tilRateName.error = "Rate name is required"
+            // dialogBinding.tilRateName.error = "Rate name is required"
         } else {
-            dialogBinding.tilRateName.error = null
+            // dialogBinding.tilRateName.error = null
         }
 
         if (rate <= 0) {
-            dialogBinding.tilRateValue.error = "Please enter a valid rate"
+            // dialogBinding.tilRateValue.error = "Please enter a valid rate"
         } else {
-            dialogBinding.tilRateValue.error = null
+            // dialogBinding.tilRateValue.error = null
         }
     }
 
@@ -603,13 +596,15 @@ class RatesManagementActivity : AppCompatActivity() {
 
     private fun addRateWithAnimation(rate: ParkingRate) {
         rateList.add(rate)
-        adapter.submitList(rateList.toList()) {
-            // Scroll to new item
-            val position = rateList.indexOf(rate)
-            if (position != -1) {
-                binding.recyclerView.smoothScrollToPosition(position)
+        adapter.submitList(rateList.toList())
+        saveRatesToStorage()
+        // Scroll to new item
+        val position = rateList.indexOf(rate)
+        if (position != -1) {
+            binding.recyclerView.smoothScrollToPosition(position)
 
-                // Animate the new item
+            // Animate the new item - delayed to allow scroll
+            binding.recyclerView.postDelayed({
                 val viewHolder = binding.recyclerView.findViewHolderForAdapterPosition(position)
                 viewHolder?.itemView?.apply {
                     alpha = 0f
@@ -622,9 +617,9 @@ class RatesManagementActivity : AppCompatActivity() {
                         .setDuration(500)
                         .start()
                 }
-            }
-            updateEmptyState()
+            }, 300)
         }
+        updateEmptyState()
         showSnackbar("Rate added successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
     }
 
@@ -639,12 +634,12 @@ class RatesManagementActivity : AppCompatActivity() {
     private fun showEditStandardRateDialog(rate: ParkingRate) {
         val dialogBinding = DialogRateEditBinding.inflate(layoutInflater)
 
-        dialogBinding.tvDialogTitle.text = "Edit Standard Rate"
+        // dialogBinding.tvDialogTitle.text = "Edit Standard Rate"
         dialogBinding.etRateName.setText(rate.name)
         dialogBinding.etRateValue.setText(rate.rate.toString())
         dialogBinding.etRateDescription.setText(rate.description)
-        dialogBinding.layoutTimeRange.visibility = View.GONE
-        dialogBinding.layoutAdvanced.visibility = View.GONE
+        // dialogBinding.layoutTimeRange.visibility = View.GONE
+        // dialogBinding.layoutAdvanced.visibility = View.GONE
 
         val dialog = MaterialAlertDialogBuilder(this, R.style.RoundedDialog)
             .setView(dialogBinding.root)
@@ -682,8 +677,8 @@ class RatesManagementActivity : AppCompatActivity() {
         dialogView.findViewById<android.widget.EditText>(R.id.etDescription).setText(rate.description)
         dialogView.findViewById<android.widget.EditText>(R.id.etStartTime).setText(rate.startTime)
         dialogView.findViewById<android.widget.EditText>(R.id.etEndTime).setText(rate.endTime)
-        dialogView.findViewById<android.widget.EditText>(R.id.etVehicleTypes).setText(rate.vehicleTypes)
-        dialogView.findViewById<android.widget.EditText>(R.id.etDays).setText(rate.daysOfWeek)
+        dialogView.findViewById<android.widget.EditText>(R.id.etVehicleTypes).setText(rate.vehicleTypes.joinToString(", "))
+        dialogView.findViewById<android.widget.EditText>(R.id.etDays).setText(rate.daysOfWeek.joinToString(", "))
         dialogView.findViewById<android.widget.EditText>(R.id.etDailyMax)?.setText(rate.dailyMax.toString())
         dialogView.findViewById<android.widget.Switch>(R.id.switchActive).isChecked = rate.isActive
 
@@ -784,3 +779,54 @@ class RatesManagementActivity : AppCompatActivity() {
             .setPositiveButton("Delete") { _, _ ->
                 deleteRate(rate, position)
             }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun deleteRate(rate: ParkingRate, position: Int) {
+        rateList.remove(rate)
+        adapter.submitList(rateList.toList())
+        saveRatesToStorage()
+        updateEmptyState()
+        showSnackbar("Rate deleted successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
+    }
+
+    private fun saveRatesToStorage() {
+        // Save to SharedPreferences
+        val json = JSONObject()
+        try {
+            // Save standard rate
+            val standard = JSONObject().apply {
+                put("hourly", rateList.find { it.type == "standard" }?.rate ?: 20.0)
+                put("daily_max", rateList.find { it.type == "standard" }?.dailyMax ?: 100.0)
+            }
+            json.put("standard", standard)
+
+            // Save special rates
+            val specialArray = org.json.JSONArray()
+            rateList.filter { it.type == "special" }.forEach { rate ->
+                specialArray.put(JSONObject().apply {
+                    put("name", rate.name)
+                    put("rate", rate.rate)
+                    put("description", rate.description)
+                    put("active", rate.isActive)
+                    put("start_time", rate.startTime)
+                    put("end_time", rate.endTime)
+                    put("vehicle_types", rate.vehicleTypes.joinToString(","))
+                    put("days", rate.daysOfWeek.joinToString(","))
+                    put("daily_max", rate.dailyMax)
+                })
+            }
+            json.put("special", specialArray)
+
+            getSharedPreferences("parking_rates", MODE_PRIVATE)
+                .edit()
+                .putString("rates", json.toString())
+                .apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}

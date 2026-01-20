@@ -12,10 +12,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 
 class SignupActivity : AppCompatActivity() {
 
@@ -29,8 +26,8 @@ class SignupActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Initialize Firebase
-        auth = Firebase.auth
-        firestore = Firebase.firestore
+        auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
 
         // Setup UI animations
         setupAnimations()
@@ -316,7 +313,7 @@ class SignupActivity : AppCompatActivity() {
         binding.btnSignUp.text = if (show) "CREATING ACCOUNT..." else "CREATE ACCOUNT"
 
         // Show/hide progress indicator
-        binding.progressBar?.isVisible = show
+        // binding.progressBar?.isVisible = show
     }
 
     private fun showSuccessAnimation() {
