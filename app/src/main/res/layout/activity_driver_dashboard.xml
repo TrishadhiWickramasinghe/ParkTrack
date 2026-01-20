@@ -619,12 +619,8 @@
         app:itemTextColor="@color/bottom_nav_colors"
         app:labelVisibilityMode="labeled"
         android:background="#FFFFFF"
-        android:elevation="12dp">
+        android:elevation="12dp"
+        app:shapeAppearanceOverlay="@style/RoundedTopCorners">
 
-        <!-- Add background shape -->
-        <com.google.android.material.shape.MaterialShapeDrawable
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:shapeAppearanceOverlay="@style/RoundedTopCorners"/>
     </com.google.android.material.bottomnavigation.BottomNavigationView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
