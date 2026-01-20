@@ -1,17 +1,22 @@
 package com.example.car_park
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.animation.AnimationUtils
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.car_park.databinding.ActivityDriverDashboardBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
+import com.google.zxing.WriterException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -110,7 +115,7 @@ class DriverDashboardActivity : AppCompatActivity() {
             view.setOnClickListener {
                 animateButtonClick(it)
                 when (it.id) {
-                    R.id.btnScanNow -> openQRScanner()
+                    R.id.btnScanNow -> generateQRCode()
                     R.id.btnParkingHistory -> openParkingHistory()
                     R.id.btnDailyCharge -> openDailyCharges()
                     R.id.btnMonthlyBill -> openMonthlyBill()
@@ -126,7 +131,7 @@ class DriverDashboardActivity : AppCompatActivity() {
             if (isParked) {
                 showExitConfirmation()
             } else {
-                openQRScanner()
+                generateQRCode()
             }
         }
     }
@@ -208,7 +213,7 @@ class DriverDashboardActivity : AppCompatActivity() {
             startParkingTimer()
 
             // Change button text for exit
-            binding.btnScanNow.text = "EXIT PARKING"
+            binding.btnScanNow.text = "GENERATE EXIT QR"
             binding.btnScanNow.setIconResource(R.drawable.ic_exit_parking)
 
         } else {
@@ -219,7 +224,7 @@ class DriverDashboardActivity : AppCompatActivity() {
             binding.tvParkingDuration.text = "0h 0m"
 
             // Reset button
-            binding.btnScanNow.text = "SCAN QR & PARK"
+            binding.btnScanNow.text = "GENERATE ENTRY QR"
             binding.btnScanNow.setIconResource(R.drawable.ic_qr_scanner)
 
             // Stop timer
@@ -321,10 +326,92 @@ class DriverDashboardActivity : AppCompatActivity() {
         return amount
     }
 
-    private fun openQRScanner() {
-        val intent = Intent(this, ScanActivity::class.java)
-        startActivity(intent)
-        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+    private fun generateQRCode() {
+        val qrData = generateUniqueQRData()
+        showQRCodeDialog(qrData)
+    }
+
+    private fun generateUniqueQRData(): String {
+        // Generate unique QR data: userId_timestamp_action_carNumber
+        val timestamp = System.currentTimeMillis()
+        val action = if (isParked) "exit" else "entry"
+        return "${userId}_${timestamp}_${action}_${carNumber}"
+    }
+
+    private fun showQRCodeDialog(qrData: String) {
+        try {
+            // Generate QR code bitmap
+            val qrBitmap = generateQRCodeBitmap(qrData, 400, 400)
+            
+            // Create dialog with QR code
+            val dialogView = layoutInflater.inflate(R.layout.dialog_qr_code, null)
+            val qrImageView = dialogView.findViewById<ImageView>(R.id.ivQRCode)
+            val tvQRData = dialogView.findViewById<android.widget.TextView>(R.id.tvQRData)
+            
+            qrImageView.setImageBitmap(qrBitmap)
+            tvQRData.text = "Show this QR code to the admin at the gate"
+            
+            MaterialAlertDialogBuilder(this, R.style.RoundedDialog)
+                .setTitle(if (isParked) "Exit Parking QR Code" else "Entry Parking QR Code")
+                .setView(dialogView)
+                .setPositiveButton("Done") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .setNegativeButton("Share") { _, _ ->
+                    shareQRCode(qrBitmap)
+                }
+                .setCancelable(false)
+                .show()
+                
+        } catch (e: WriterException) {
+            e.printStackTrace()
+            Snackbar.make(binding.root, "Failed to generate QR code", Snackbar.LENGTH_LONG)
+                .setBackgroundTint(ContextCompat.getColor(this, R.color.red))
+                .setTextColor(Color.WHITE)
+                .show()
+        }
+    }
+
+    private fun generateQRCodeBitmap(text: String, width: Int, height: Int): Bitmap {
+        val writer = MultiFormatWriter()
+        val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, width, height)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+        
+        return bitmap
+    }
+
+    private fun shareQRCode(bitmap: Bitmap) {
+        try {
+            val file = java.io.File(cacheDir, "qr_code.png")
+            val fos = java.io.FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+            fos.close()
+            
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "com.example.car_park.fileprovider",
+                file
+            )
+            
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, "Parking QR Code - Show this at the gate")
+            }
+            
+            startActivity(Intent.createChooser(intent, "Share QR Code"))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Snackbar.make(binding.root, "Failed to share QR code", Snackbar.LENGTH_SHORT)
+                .setBackgroundTint(ContextCompat.getColor(this, R.color.red))
+                .show()
+        }
     }
 
     private fun showExitConfirmation() {
@@ -411,7 +498,7 @@ class DriverDashboardActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_scan -> {
-                    openQRScanner()
+                    generateQRCode()
                     true
                 }
                 R.id.nav_history -> {

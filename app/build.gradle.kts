@@ -105,6 +105,9 @@ dependencies {
 
     // Simple QR Code Scanner (easier than CameraX)
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    
+    // QR Code Generation
+    implementation("com.google.zxing:core:3.5.2")
 
     // Lottie animations
     implementation("com.airbnb.android:lottie:6.1.0")
