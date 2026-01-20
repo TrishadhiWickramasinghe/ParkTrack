@@ -26,11 +26,15 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val scope = CoroutineScope(Dispatchers.Main)
+    private var selectedRole: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Get the selected role from intent
+        selectedRole = intent.getStringExtra("role")
 
         // Set status bar color
         window.statusBarColor = ContextCompat.getColor(this, R.color.dark_green)
@@ -237,10 +241,18 @@ class LoginActivity : AppCompatActivity() {
                 // Show success message
                 showSnackbar("Login successful!", Snackbar.LENGTH_SHORT, Color.GREEN)
 
-                // Navigate to main activity after delay
+                // Save login state and role
+                val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                sharedPref.edit().apply {
+                    putBoolean("is_logged_in", true)
+                    putString("user_role", selectedRole ?: "driver")
+                    apply()
+                }
+
+                // Navigate to appropriate dashboard after delay
                 scope.launch {
                     delay(500)
-                    navigateToMain()
+                    navigateToDashboard()
                 }
             }
             .start()
@@ -265,8 +277,12 @@ class LoginActivity : AppCompatActivity() {
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
-    private fun navigateToMain() {
-        val intent = Intent(this, RoleSelectionActivity::class.java)
+    private fun navigateToDashboard() {
+        val intent = when (selectedRole) {
+            "admin" -> Intent(this, AdminDashboardActivity::class.java)
+            "driver" -> Intent(this, DriverDashboardActivity::class.java)
+            else -> Intent(this, RoleSelectionActivity::class.java)
+        }
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out)

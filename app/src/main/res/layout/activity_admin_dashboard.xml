@@ -560,14 +560,7 @@
             app:itemIconTint="@color/bottom_nav_colors"
             app:itemTextColor="@color/bottom_nav_colors"
             app:labelVisibilityMode="labeled"
-            app:menu="@menu/bottom_navigation_menu">
-
-            <!-- Add background shape -->
-            <com.google.android.material.shape.MaterialShapeDrawable
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:shapeAppearanceOverlay="@style/RoundedTopCorners"/>
-        </com.google.android.material.bottomnavigation.BottomNavigationView>
+            app:menu="@menu/bottom_navigation_menu"/>
     </LinearLayout>
 
     <!-- Floating Action Button for Quick Action -->

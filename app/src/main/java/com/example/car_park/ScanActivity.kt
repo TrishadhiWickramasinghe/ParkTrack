@@ -195,19 +195,24 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun setupScanLineAnimation() {
-        val scanFrame = binding.root.findViewById<androidx.cardview.widget.CardView>(R.id.scanFrame)
         val scanLine = binding.scanLine
-
-        scanLineAnimator = ObjectAnimator.ofFloat(
-            scanLine,
-            "translationY",
-            -scanFrame.height / 2f,
-            scanFrame.height / 2f
-        ).apply {
-            duration = 2000
-            repeatCount = ValueAnimator.INFINITE
-            repeatMode = ValueAnimator.REVERSE
-            interpolator = AccelerateDecelerateInterpolator()
+        
+        // Use a post-delayed approach to ensure view is laid out
+        scanLine.post {
+            val scanFrame = binding.root.findViewById<androidx.cardview.widget.CardView>(R.id.scanFrame)
+            if (scanFrame != null && scanFrame.height > 0) {
+                scanLineAnimator = ObjectAnimator.ofFloat(
+                    scanLine,
+                    "translationY",
+                    -scanFrame.height / 2f,
+                    scanFrame.height / 2f
+                ).apply {
+                    duration = 2000
+                    repeatCount = ValueAnimator.INFINITE
+                    repeatMode = ValueAnimator.REVERSE
+                    interpolator = AccelerateDecelerateInterpolator()
+                }
+            }
         }
     }
 
