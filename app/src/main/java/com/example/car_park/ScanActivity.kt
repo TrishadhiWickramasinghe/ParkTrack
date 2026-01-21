@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import com.example.car_park.databinding.ActivityScanBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -48,6 +49,7 @@ class ScanActivity : AppCompatActivity() {
     private lateinit var barcodeScanner: BarcodeScanner
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var cameraManager: CameraManager
+    private lateinit var firebaseDb: FirebaseFirestore
     private var userId: Int = 0
     private var isScanning = false
     private var currentParkingId: Int = -1
@@ -78,6 +80,7 @@ class ScanActivity : AppCompatActivity() {
 
         dbHelper = DatabaseHelper(this)
         cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
+        firebaseDb = FirebaseFirestore.getInstance()
 
         // Get user ID
         userId = getUserIdFromPrefs()
@@ -195,19 +198,24 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun setupScanLineAnimation() {
-        val scanFrame = binding.root.findViewById<androidx.cardview.widget.CardView>(R.id.scanFrame)
         val scanLine = binding.scanLine
-
-        scanLineAnimator = ObjectAnimator.ofFloat(
-            scanLine,
-            "translationY",
-            -scanFrame.height / 2f,
-            scanFrame.height / 2f
-        ).apply {
-            duration = 2000
-            repeatCount = ValueAnimator.INFINITE
-            repeatMode = ValueAnimator.REVERSE
-            interpolator = AccelerateDecelerateInterpolator()
+        
+        // Use a post-delayed approach to ensure view is laid out
+        scanLine.post {
+            val scanFrame = binding.root.findViewById<androidx.cardview.widget.CardView>(R.id.scanFrame)
+            if (scanFrame != null && scanFrame.height > 0) {
+                scanLineAnimator = ObjectAnimator.ofFloat(
+                    scanLine,
+                    "translationY",
+                    -scanFrame.height / 2f,
+                    scanFrame.height / 2f
+                ).apply {
+                    duration = 2000
+                    repeatCount = ValueAnimator.INFINITE
+                    repeatMode = ValueAnimator.REVERSE
+                    interpolator = AccelerateDecelerateInterpolator()
+                }
+            }
         }
     }
 
@@ -344,6 +352,170 @@ class ScanActivity : AppCompatActivity() {
         // Play scan success sound/vibration
         playScanSuccessEffect()
 
+        // Try to parse the new QR format first: userId_timestamp_action_carNumber
+        val qrParts = rawValue.split("_")
+        
+        if (qrParts.size >= 4) {
+            // New format QR code from driver
+            try {
+                val driverId = qrParts[0].toInt()
+                val timestamp = qrParts[1].toLong()
+                val action = qrParts[2]
+                val carNumber = qrParts[3]
+                
+                // Process using new format
+                processNewFormatQR(driverId, timestamp, action, carNumber, rawValue)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Fallback to old format
+                processOldFormatQR(rawValue, barcode)
+            }
+        } else {
+            // Old format or vehicle number only
+            processOldFormatQR(rawValue, barcode)
+        }
+    }
+
+    private fun processNewFormatQR(
+        driverId: Int,
+        timestamp: Long,
+        action: String,
+        carNumber: String,
+        qrData: String
+    ) {
+        animateScanSuccess()
+        
+        scope.launch {
+            try {
+                val sessionData = withContext(Dispatchers.IO) {
+                    when (action.lowercase()) {
+                        "entry" -> createEntrySession(driverId, carNumber, timestamp, qrData)
+                        "exit" -> createExitSession(driverId, carNumber, timestamp, qrData)
+                        else -> null
+                    }
+                }
+                
+                if (sessionData != null) {
+                    // Save to Firebase
+                    saveToFirebase(sessionData)
+                    showSuccessAnimation()
+                    showSnackbar("${action.uppercase()} recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
+                    
+                    // Reset after delay
+                    handler.postDelayed({
+                        hideResultPanel()
+                    }, 2000)
+                } else {
+                    showErrorAnimation()
+                    showSnackbar("Failed to process QR code", Snackbar.LENGTH_SHORT, Color.RED)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showErrorAnimation()
+                showSnackbar("Error: ${e.message}", Snackbar.LENGTH_SHORT, Color.RED)
+            }
+        }
+    }
+
+    private fun createEntrySession(
+        driverId: Int,
+        carNumber: String,
+        entryTime: Long,
+        qrData: String
+    ): Map<String, Any>? {
+        return try {
+            val sessionData: Map<String, Any> = mapOf(
+                "sessionId" to "${driverId}_${entryTime}" as Any,
+                "userId" to driverId as Any,
+                "vehicleNumber" to carNumber as Any,
+                "entryTime" to entryTime as Any,
+                "exitTime" to null as Any,
+                "entryQRData" to qrData as Any,
+                "exitQRData" to null as Any,
+                "durationMinutes" to 0 as Any,
+                "charges" to 0.0 as Any,
+                "status" to "active" as Any,
+                "createdAt" to System.currentTimeMillis() as Any
+            )
+            sessionData
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun createExitSession(
+        driverId: Int,
+        carNumber: String,
+        exitTime: Long,
+        qrData: String
+    ): Map<String, Any>? {
+        return try {
+            // Find the active session for this driver
+            val durationMinutes = 0 // Will be calculated from entry time
+            val charges = 0.0 // Will be calculated
+            
+            val sessionData: Map<String, Any> = mapOf(
+                "sessionId" to "${driverId}_${exitTime}" as Any,
+                "userId" to driverId as Any,
+                "vehicleNumber" to carNumber as Any,
+                "exitTime" to exitTime as Any,
+                "exitQRData" to qrData as Any,
+                "durationMinutes" to durationMinutes as Any,
+                "charges" to charges as Any,
+                "status" to "completed" as Any,
+                "updatedAt" to System.currentTimeMillis() as Any
+            )
+            sessionData
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun saveToFirebase(sessionData: Map<String, Any>) {
+        firebaseDb.collection("parking_sessions")
+            .document(sessionData["sessionId"].toString())
+            .set(sessionData)
+            .addOnSuccessListener {
+                // Update local database as well
+                updateLocalDatabase(sessionData)
+            }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+                showSnackbar("Firebase save failed: ${e.message}", Snackbar.LENGTH_SHORT, Color.RED)
+            }
+    }
+
+    private fun updateLocalDatabase(sessionData: Map<String, Any>) {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    val vehicleNumber = sessionData["vehicleNumber"].toString()
+                    val status = sessionData["status"].toString()
+                    
+                    if (status == "active") {
+                        // Entry - add to local database
+                        dbHelper.addParkingEntry(
+                            sessionData["userId"].toString().toInt(),
+                            vehicleNumber
+                        )
+                    } else if (status == "completed") {
+                        // Exit - update in local database
+                        val charges = (sessionData["charges"] as? Number)?.toDouble() ?: 0.0
+                        dbHelper.updateParkingExit(
+                            sessionData["userId"].toString().toInt().toLong(),
+                            charges
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    private fun processOldFormatQR(rawValue: String, barcode: Barcode) {
         // Extract vehicle number
         val carNumber = extractVehicleNumber(rawValue)
 
@@ -351,7 +523,7 @@ class ScanActivity : AppCompatActivity() {
             // Animate scan line
             animateScanSuccess()
 
-            // Process the vehicle
+            // Process the vehicle using old logic
             processVehicle(carNumber, barcode.boundingBox)
         } else {
             showSnackbar("Invalid QR code format", Snackbar.LENGTH_SHORT, Color.RED)
