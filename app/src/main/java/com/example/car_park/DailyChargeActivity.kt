@@ -1,364 +1,278 @@
 package com.example.car_park
 
-import android.app.DatePickerDialog
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.view.View
-import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.car_park.adapters.DailySessionAdapter
 import com.example.car_park.databinding.ActivityDailyChargeBinding
-import com.google.android.material.snackbar.Snackbar
+import com.example.car_park.models.ParkingRecord
+import com.example.car_park.utils.PDFGenerator
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Activity to display daily charge summary with hourly breakdown chart
+ * Features:
+ * - Today's sessions summary
+ * - Date picker for previous dates
+ * - Hourly breakdown bar chart
+ * - Session list
+ * - Share summary
+ */
 class DailyChargeActivity : AppCompatActivity() {
-
+    
     private lateinit var binding: ActivityDailyChargeBinding
-    private lateinit var dbHelper: DatabaseHelper
-    private var userId: String = ""  // Changed to String
-    private var selectedDate: Date = Date()
-    private val calendar = Calendar.getInstance()
+    private lateinit var adapter: DailySessionAdapter
+    private lateinit var firebaseDb: FirebaseFirestore
+    private lateinit var auth: FirebaseAuth
+    private lateinit var pdfGenerator: PDFGenerator
+    
+    private var userId: String = ""
+    private var selectedDate: Long = System.currentTimeMillis()
     private val scope = CoroutineScope(Dispatchers.Main)
-
-    companion object {
-        private const val HOURLY_RATE = 20.0
-        private const val DAILY_MAX = 200.0
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDailyChargeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Set status bar color
+        
+        // Setup
         window.statusBarColor = ContextCompat.getColor(this, R.color.dark_green)
-
-        dbHelper = DatabaseHelper(this)
-
-        // Get user ID
-        userId = getUserIdFromPrefs()
-
+        firebaseDb = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
+        pdfGenerator = PDFGenerator(this)
+        userId = auth.currentUser?.uid ?: ""
+        
         setupToolbar()
-        setupDateSelector()
-        loadTodaysDataWithAnimation()
+        setupRecyclerView()
+        setupChart()
+        setupClickListeners()
+        
+        // Load today's data
+        loadDailyCharges()
     }
-
-    private fun getUserIdFromPrefs(): String {
-        val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        return sharedPref.getString("user_id", "") ?: ""
-    }
-
+    
     private fun setupToolbar() {
         binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
+            finish()
         }
-
-        // Add toolbar animation
-        binding.toolbar.alpha = 0f
-        binding.toolbar.animate()
-            .alpha(1f)
-            .setDuration(500)
-            .start()
     }
-
-    private fun setupDateSelector() {
-        binding.btnPrevDate.setOnClickListener {
-            animateButtonClick(it)
-            navigateToPreviousDay()
+    
+    private fun setupRecyclerView() {
+        adapter = DailySessionAdapter(
+            onItemClick = { record ->
+                val intent = Intent(this, ReceiptActivity::class.java).apply {
+                    putExtra("parking_record", record)
+                }
+                startActivity(intent)
+            }
+        )
+        
+        binding.rvSessions.apply {
+            layoutManager = LinearLayoutManager(this@DailyChargeActivity)
+            adapter = this@DailyChargeActivity.adapter
         }
-
-        binding.btnNextDate.setOnClickListener {
-            animateButtonClick(it)
-            navigateToNextDay()
+    }
+    
+    private fun setupChart() {
+        with(binding.charHourlyBreakdown) {
+            description.isEnabled = false
+            legend.isEnabled = true
+            animateY(1000)
         }
-
+    }
+    
+    private fun setupClickListeners() {
         binding.btnSelectDate.setOnClickListener {
-            animateButtonClick(it)
-            showDatePickerDialog()
+            showDatePicker()
+        }
+        
+        binding.btnShare.setOnClickListener {
+            shareDailySummary()
         }
     }
-
-    private fun loadTodaysDataWithAnimation(date: Date = Date()) {
-        selectedDate = date
+    
+    private fun loadDailyCharges() {
+        binding.progressBar.visibility = android.view.View.VISIBLE
+        
         scope.launch {
             try {
-                // Show loading state
-                binding.layoutSummary.alpha = 0f
-                binding.layoutSummary.visibility = View.VISIBLE
-                binding.layoutEmptyState.visibility = View.GONE
-
-                val dateString = formatDateForDB(date)
-                val dailyData = withContext(Dispatchers.IO) {
-                    val data = dbHelper.getDailyParkingStats(userId, dateString)
-                    // Convert DailyParkingData to DailyStats
-                    DailyStats(
-                        totalMinutes = data.totalMinutes,
-                        totalAmount = data.totalAmount,
-                        entryCount = 0 // Default to 0 as it's not provided
-                    )
+                val sessions = fetchDailySessions()
+                
+                withContext(Dispatchers.Main) {
+                    if (sessions.isEmpty()) {
+                        showEmptyState()
+                    } else {
+                        hideEmptyState()
+                        adapter.updateRecords(sessions)
+                        updateSummary(sessions)
+                        updateChart(sessions)
+                    }
+                    binding.progressBar.visibility = android.view.View.GONE
                 }
-
-                // Update UI with animations
-                updateUIWithData(dailyData, date)
-
-                // Show/hide empty state
-                if (dailyData.totalMinutes > 0) {
-                    showSummaryWithAnimation()
-                } else {
-                    showEmptyStateWithAnimation(date)
-                }
-
             } catch (e: Exception) {
-                e.printStackTrace()
-                showToast("Failed to load data")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@DailyChargeActivity,
+                        "Error loading charges: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    binding.progressBar.visibility = android.view.View.GONE
+                }
             }
         }
     }
-
-    private fun updateUIWithData(dailyData: DailyStats, date: Date) {
-        // Update date with animation
-        animateTextChange(binding.tvDate, formatDisplayDate(date))
-
-        // Update duration with count animation
-        val hours = dailyData.totalMinutes / 60
-        val mins = dailyData.totalMinutes % 60
-        animateTextChange(binding.tvTotalHours, "${hours}h ${mins}m")
-
-        // Update amount with count animation
-        val totalAmount = calculateAmount(dailyData.totalMinutes)
-        animateCount(binding.tvTotalAmount, 0.0, totalAmount, "₹")
-
-        // Update parking rate
-        binding.tvParkingRate.text = "₹${HOURLY_RATE.toInt()}.00 per hour"
-
-        // Update calculated amount
-        val calculatedAmount = calculateExactAmount(dailyData.totalMinutes)
-        binding.tvCalculatedAmount.text = "₹${"%.2f".format(calculatedAmount)}"
-
-        // Show calculation details
-        updateBreakdownDetails(dailyData.totalMinutes)
-    }
-
-    private fun calculateAmount(minutes: Int): Double {
-        val hours = minutes / 60.0
-        var amount = hours * HOURLY_RATE
-
-        // Apply daily maximum
-        if (amount > DAILY_MAX) {
-            amount = DAILY_MAX
+    
+    private suspend fun fetchDailySessions(): List<ParkingRecord> {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = selectedDate
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
         }
-
-        return amount
+        val dayStart = calendar.timeInMillis
+        
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        val dayEnd = calendar.timeInMillis
+        
+        val snapshot = firebaseDb.collection("parking_sessions")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("status", "completed")
+            .whereGreaterThanOrEqualTo("entryTime", dayStart)
+            .whereLessThanOrEqualTo("entryTime", dayEnd)
+            .orderBy("entryTime", Query.Direction.DESCENDING)
+            .get()
+            .await()
+        
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(ParkingRecord::class.java)?.copy(sessionId = doc.id)
+        }
     }
-
-    private fun calculateExactAmount(minutes: Int): Double {
-        val hours = minutes / 60.0
-        return hours * HOURLY_RATE
+    
+    private fun updateSummary(sessions: List<ParkingRecord>) {
+        val totalSessions = sessions.size
+        val totalDuration = sessions.sumOf { it.durationMinutes }
+        val totalCharges = sessions.sumOf { it.charges }
+        
+        val hours = totalDuration / 60
+        val minutes = totalDuration % 60
+        val durationText = when {
+            hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+            hours > 0 -> "${hours}h"
+            else -> "${minutes}m"
+        }
+        binding.tvTotalHours.text = durationText
+        binding.tvTotalAmount.text = String.format("₹%.2f", totalCharges)
+        
+        val dateFormat = java.text.SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        binding.tvDate.text = dateFormat.format(Date(selectedDate))
     }
-
-    private fun updateBreakdownDetails(minutes: Int) {
-        val hours = minutes / 60.0
-        val exactAmount = hours * HOURLY_RATE
-        val cappedAmount = if (exactAmount > DAILY_MAX) DAILY_MAX else exactAmount
-
-        // You can add more detailed breakdown here
-    }
-
-    private fun showSummaryWithAnimation() {
-        binding.layoutEmptyState.visibility = View.GONE
-
-        binding.layoutSummary.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(600)
-            .setStartDelay(300)
-            .withStartAction {
-                binding.layoutSummary.scaleX = 0.9f
-                binding.layoutSummary.scaleY = 0.9f
+    
+    private fun updateChart(sessions: List<ParkingRecord>) {
+        // Group sessions by hour
+        val hourlyData = mutableMapOf<Int, Double>()
+        for (session in sessions) {
+            val calendar = Calendar.getInstance().apply {
+                timeInMillis = session.entryTime
             }
-            .start()
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            hourlyData[hour] = (hourlyData[hour] ?: 0.0) + session.charges
+        }
+        
+        // Create chart entries
+        val entries = mutableListOf<BarEntry>()
+        for (hour in 0..23) {
+            val charge = hourlyData[hour] ?: 0.0
+            entries.add(BarEntry(hour.toFloat(), charge.toFloat()))
+        }
+        
+        val dataSet = BarDataSet(entries, "Charges by Hour").apply {
+            color = Color.parseColor("#00796B")
+            valueTextColor = Color.BLACK
+            valueTextSize = 9f
+        }
+        
+        val barData = BarData(dataSet).apply {
+            barWidth = 0.8f
+        }
+        
+        val hours = Array(24) { it.toString() }
+        
+        with(binding.charHourlyBreakdown) {
+            data = barData
+            xAxis.valueFormatter = IndexAxisValueFormatter(hours)
+            xAxis.granularity = 1f
+            invalidate()
+        }
     }
-
-    private fun showEmptyStateWithAnimation(date: Date) {
-        binding.layoutSummary.visibility = View.GONE
-
-        binding.layoutEmptyState.visibility = View.VISIBLE
-        binding.layoutEmptyState.alpha = 0f
-        binding.layoutEmptyState.scaleX = 0.9f
-        binding.layoutEmptyState.scaleY = 0.9f
-
-        binding.layoutEmptyState.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(500)
-            .start()
-
-        binding.tvNoData.text = "No parking records for ${formatDisplayDate(date)}"
+    
+    private fun showDatePicker() {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = selectedDate
+        }
+        
+        android.app.DatePickerDialog(this, { _, year, month, dayOfMonth ->
+            calendar.set(year, month, dayOfMonth)
+            selectedDate = calendar.timeInMillis
+            loadDailyCharges()
+        }, calendar.get(Calendar.YEAR), 
+            calendar.get(Calendar.MONTH), 
+            calendar.get(Calendar.DAY_OF_MONTH)).show()
     }
-
-    private fun navigateToPreviousDay() {
-        calendar.time = selectedDate
-        calendar.add(Calendar.DAY_OF_MONTH, -1)
-        selectedDate = calendar.time
-        loadTodaysDataWithAnimation(selectedDate)
-
-        // Show navigation feedback
-        showSnackbar("Previous day", Snackbar.LENGTH_SHORT)
-    }
-
-    private fun navigateToNextDay() {
-        calendar.time = selectedDate
-        calendar.add(Calendar.DAY_OF_MONTH, 1)
-
-        // Don't allow future dates
-        if (calendar.time.after(Date())) {
-            showSnackbar("Cannot select future dates", Snackbar.LENGTH_SHORT, Color.YELLOW)
+    
+    private fun shareDailySummary() {
+        val sessions = adapter.getRecords()
+        if (sessions.isEmpty()) {
+            Toast.makeText(this, "No sessions to share", Toast.LENGTH_SHORT).show()
             return
         }
-
-        selectedDate = calendar.time
-        loadTodaysDataWithAnimation(selectedDate)
-
-        showSnackbar("Next day", Snackbar.LENGTH_SHORT)
-    }
-
-    private fun showDatePickerDialog() {
-        calendar.time = selectedDate
-
-        val datePicker = DatePickerDialog(
-            this,
-            R.style.DatePickerDialogTheme,
-            { _, year, month, day ->
-                calendar.set(year, month, day)
-                selectedDate = calendar.time
-                loadTodaysDataWithAnimation(selectedDate)
-                showSnackbar("Date selected", Snackbar.LENGTH_SHORT)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-
-        // Set max date to today
-        datePicker.datePicker.maxDate = System.currentTimeMillis()
-        datePicker.show()
-
-        // Style date picker buttons
-        datePicker.getButton(DatePickerDialog.BUTTON_POSITIVE)?.apply {
-            setTextColor(ContextCompat.getColor(this@DailyChargeActivity, R.color.green))
+        
+        val dateFormat = java.text.SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        val date = dateFormat.format(Date(selectedDate))
+        
+        val summary = sessions.fold("Daily Parking Summary - $date\n\n") { acc, session ->
+            acc + "${session.vehicleNumber}: ${session.getFormattedDuration()} - ${session.getFormattedCharges()}\n"
         }
-
-        datePicker.getButton(DatePickerDialog.BUTTON_NEGATIVE)?.apply {
-            setTextColor(ContextCompat.getColor(this@DailyChargeActivity, R.color.gray))
+        
+        val totalCharges = sessions.sumOf { it.charges }
+        val summary2 = summary + "\nTotal: ₹%.2f".format(totalCharges)
+        
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Daily Parking Summary - $date")
+            putExtra(Intent.EXTRA_TEXT, summary2)
         }
+        
+        startActivity(Intent.createChooser(intent, "Share Summary"))
     }
-
-    private fun formatDateForDB(date: Date): String {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        return sdf.format(date)
+    
+    private fun showEmptyState() {
+        binding.rvSessions.visibility = android.view.View.GONE
+        binding.charHourlyBreakdown.visibility = android.view.View.GONE
+        binding.tvNoData.visibility = android.view.View.VISIBLE
     }
-
-    private fun formatDisplayDate(date: Date): String {
-        val today = Calendar.getInstance()
-        val selected = Calendar.getInstance().apply { time = date }
-
-        return when {
-            isSameDay(today, selected) -> "Today"
-            isYesterday(today, selected) -> "Yesterday"
-            isTomorrow(today, selected) -> "Tomorrow"
-            else -> {
-                val sdf = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-                sdf.format(date)
-            }
-        }
+    
+    private fun hideEmptyState() {
+        binding.rvSessions.visibility = android.view.View.VISIBLE
+        binding.charHourlyBreakdown.visibility = android.view.View.VISIBLE
+        binding.tvNoData.visibility = android.view.View.GONE
     }
-
-    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
-    }
-
-    private fun isYesterday(cal1: Calendar, cal2: Calendar): Boolean {
-        val yesterday = Calendar.getInstance().apply {
-            time = cal1.time
-            add(Calendar.DAY_OF_YEAR, -1)
-        }
-        return isSameDay(yesterday, cal2)
-    }
-
-    private fun isTomorrow(cal1: Calendar, cal2: Calendar): Boolean {
-        val tomorrow = Calendar.getInstance().apply {
-            time = cal1.time
-            add(Calendar.DAY_OF_YEAR, 1)
-        }
-        return isSameDay(tomorrow, cal2)
-    }
-
-    // Animation methods
-    private fun animateButtonClick(view: View) {
-        view.animate()
-            .scaleX(0.95f)
-            .scaleY(0.95f)
-            .setDuration(100)
-            .withEndAction {
-                view.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(100)
-                    .start()
-            }
-            .start()
-    }
-
-    private fun animateTextChange(textView: android.widget.TextView, newText: String) {
-        textView.animate()
-            .alpha(0.5f)
-            .setDuration(150)
-            .withEndAction {
-                textView.text = newText
-                textView.animate()
-                    .alpha(1f)
-                    .setDuration(150)
-                    .start()
-            }
-            .start()
-    }
-
-    private fun animateCount(textView: android.widget.TextView, start: Double, end: Double, prefix: String) {
-        val animator = android.animation.ValueAnimator.ofFloat(start.toFloat(), end.toFloat())
-        animator.duration = 1500
-        animator.interpolator = android.view.animation.DecelerateInterpolator()
-        animator.addUpdateListener { valueAnimator ->
-            val value = valueAnimator.animatedValue as Float
-            textView.text = "$prefix${"%.2f".format(value)}"
-        }
-        animator.start()
-    }
-
-    private fun showSnackbar(message: String, duration: Int = Snackbar.LENGTH_SHORT, color: Int = Color.GREEN) {
-        Snackbar.make(binding.coordinatorLayout, message, duration)
-            .setBackgroundTint(color)
-            .setTextColor(Color.WHITE)
-            .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-            .show()
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    // Data class for daily stats
-    data class DailyStats(
-        val totalMinutes: Int,
-        val totalAmount: Double,
-        val entryCount: Int
-    )
 }
