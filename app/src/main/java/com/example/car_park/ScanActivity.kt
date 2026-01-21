@@ -27,6 +27,7 @@ import com.example.car_park.databinding.ActivityScanBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -387,6 +388,9 @@ class ScanActivity : AppCompatActivity() {
         
         scope.launch {
             try {
+                // Display scan details immediately
+                displayScanDetails(driverId, timestamp, action, carNumber)
+                
                 val sessionData = withContext(Dispatchers.IO) {
                     when (action.lowercase()) {
                         "entry" -> createEntrySession(driverId, carNumber, timestamp, qrData)
@@ -404,7 +408,7 @@ class ScanActivity : AppCompatActivity() {
                     // Reset after delay
                     handler.postDelayed({
                         hideResultPanel()
-                    }, 2000)
+                    }, 3000)
                 } else {
                     showErrorAnimation()
                     showSnackbar("Failed to process QR code", Snackbar.LENGTH_SHORT, Color.RED)
@@ -413,6 +417,35 @@ class ScanActivity : AppCompatActivity() {
                 e.printStackTrace()
                 showErrorAnimation()
                 showSnackbar("Error: ${e.message}", Snackbar.LENGTH_SHORT, Color.RED)
+            }
+        }
+    }
+
+    private fun displayScanDetails(
+        driverId: Int,
+        timestamp: Long,
+        action: String,
+        carNumber: String
+    ) {
+        runOnUiThread {
+            try {
+                // Update UI with scanned details
+                binding.tvScannedCarNumber.text = carNumber
+                binding.tvScanTime.text = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+                
+                // For exit action, calculate and show charges
+                if (action.lowercase() == "exit") {
+                    val charges = 50.0 // Placeholder: ₹20 per hour, example: 2.5 hours = ₹50
+                    binding.tvScanAmount?.text = "₹${String.format("%.2f", charges)}"
+                    binding.layoutAmount?.visibility = android.view.View.VISIBLE
+                } else {
+                    binding.layoutAmount?.visibility = android.view.View.GONE
+                }
+                
+                // Show result panel
+                showResultPanel()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -444,6 +477,27 @@ class ScanActivity : AppCompatActivity() {
         }
     }
 
+    private fun getActiveSessionForDriver(driverId: Int, onSessionFound: (Map<String, Any>?) -> Unit) {
+        firebaseDb.collection("parking_sessions")
+            .whereEqualTo("userId", driverId)
+            .whereEqualTo("status", "active")
+            .orderBy("entryTime", Query.Direction.DESCENDING)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    val sessionData = documents.documents[0].data
+                    onSessionFound(sessionData)
+                } else {
+                    onSessionFound(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+                onSessionFound(null)
+            }
+    }
+
     private fun createExitSession(
         driverId: Int,
         carNumber: String,
@@ -451,9 +505,23 @@ class ScanActivity : AppCompatActivity() {
         qrData: String
     ): Map<String, Any>? {
         return try {
-            // Find the active session for this driver
-            val durationMinutes = 0 // Will be calculated from entry time
-            val charges = 0.0 // Will be calculated
+            // Query Firebase to find matching entry session
+            var durationMinutes = 0
+            var charges = 0.0
+            var entryTime = 0L
+            
+            // For now, calculate from a fixed rate
+            // TODO: Query Firebase for actual entry time
+            val hourlyRate = 20.0
+            val minCharges = 20.0
+            val maxDailyCharges = 200.0
+            
+            // Placeholder calculation (will be updated when we can query Firebase)
+            durationMinutes = 60 // Example: 1 hour
+            charges = minOf(
+                maxOf(durationMinutes / 60.0 * hourlyRate, minCharges),
+                maxDailyCharges
+            )
             
             val sessionData: Map<String, Any> = mapOf(
                 "sessionId" to "${driverId}_${exitTime}" as Any,

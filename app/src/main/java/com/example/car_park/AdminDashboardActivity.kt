@@ -88,6 +88,11 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, RatesManagementActivity::class.java))
         }
 
+        binding.cardScanQR.setOnClickListener {
+            animateCardClick(it)
+            startActivity(Intent(this, ScanActivity::class.java))
+        }
+
         // Add New Vehicle Card (from the new UI)
         // TODO: Add cardAddVehicle to layout
         // val addVehicleCard = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(
@@ -134,14 +139,10 @@ class AdminDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupFloatingActionButton() {
-        // If you added FAB in XML, handle it here
-        val fab = binding.root.findViewById<com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton>(
-            R.id.fab ?: View.generateViewId()
-        )
-
-        fab?.setOnClickListener {
+        // Scan QR FAB
+        binding.fabScanQR.setOnClickListener {
             animateFabClick(it)
-            startActivity(Intent(this, QRScannerActivity::class.java))
+            startActivity(Intent(this, ScanActivity::class.java))
         }
     }
 
