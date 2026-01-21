@@ -75,7 +75,7 @@ fun DatabaseHelper.getCurrentParkingIdForVehicle(vehicleNumber: String): Long {
     return -1L
 }
 
-fun DatabaseHelper.hasActiveParking(userId: Int): Boolean {
+fun DatabaseHelper.hasActiveParking(userId: String): Boolean {
     return false
 }
 

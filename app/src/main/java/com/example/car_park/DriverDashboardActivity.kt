@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import com.example.car_park.databinding.ActivityDriverDashboardBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.WriterException
@@ -28,7 +30,7 @@ class DriverDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDriverDashboardBinding
     private lateinit var dbHelper: DatabaseHelper
-    private var userId: Int = 0
+    private var userId: String = ""  // Changed to String (Firebase UID)
     private var userName: String = ""
     private var carNumber: String = ""
     private var isParked: Boolean = false
@@ -37,6 +39,8 @@ class DriverDashboardActivity : AppCompatActivity() {
     private var parkingTimerRunnable: Runnable? = null
     private val scope = CoroutineScope(Dispatchers.Main)
     private val HOURLY_RATE = 20.0
+    private lateinit var firebaseDb: FirebaseFirestore
+    private var sessionListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +51,7 @@ class DriverDashboardActivity : AppCompatActivity() {
         window.statusBarColor = ContextCompat.getColor(this, R.color.dark_green)
 
         dbHelper = DatabaseHelper(this)
+        firebaseDb = FirebaseFirestore.getInstance()
 
         // Get user info
         loadUserInfo()
@@ -58,6 +63,9 @@ class DriverDashboardActivity : AppCompatActivity() {
 
         // Load data with animations
         loadDashboardData()
+        
+        // Setup real-time session listener
+        setupSessionListener()
     }
 
     override fun onResume() {
@@ -74,18 +82,15 @@ class DriverDashboardActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopParkingTimer()
+        sessionListener?.remove()  // Remove Firestore listener
         handler.removeCallbacksAndMessages(null)
     }
 
     private fun loadUserInfo() {
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
 
-        userId = try {
-            sharedPref.getInt("user_id", 0)
-        } catch (e: ClassCastException) {
-            sharedPref.getString("user_id", "0")?.toIntOrNull() ?: 0
-        }
-
+        // Get Firebase UID (stored as user_id)
+        userId = sharedPref.getString("user_id", "") ?: ""
         userName = sharedPref.getString("user_name", "Driver") ?: "Driver"
         carNumber = sharedPref.getString("car_number", "Not set") ?: "Not set"
 
@@ -166,6 +171,43 @@ class DriverDashboardActivity : AppCompatActivity() {
                 showSnackbar("Failed to load dashboard data", Snackbar.LENGTH_SHORT, Color.RED)
             }
         }
+    }
+
+    private fun setupSessionListener() {
+        // Listen for real-time updates to parking sessions for this driver
+        if (userId.isEmpty()) return
+        
+        sessionListener = firebaseDb.collection("parking_sessions")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("status", "active")
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    error.printStackTrace()
+                    return@addSnapshotListener
+                }
+
+                snapshots?.let { docs ->
+                    if (docs.isEmpty) {
+                        // No active sessions
+                        if (isParked) {
+                            isParked = false
+                            binding.tvParkingStatus.text = "NOT PARKED"
+                            binding.tvParkingStatus.setTextColor(ContextCompat.getColor(this, R.color.gray))
+                            binding.btnScanNow.text = "GENERATE ENTRY QR"
+                            showSnackbar("Exit recorded by admin", Snackbar.LENGTH_SHORT, Color.GREEN)
+                        }
+                    } else {
+                        // Active session exists
+                        if (!isParked) {
+                            isParked = true
+                            binding.tvParkingStatus.text = "PARKED"
+                            binding.tvParkingStatus.setTextColor(ContextCompat.getColor(this, R.color.green))
+                            binding.btnScanNow.text = "GENERATE EXIT QR"
+                            showSnackbar("Entry recorded by admin", Snackbar.LENGTH_SHORT, Color.GREEN)
+                        }
+                    }
+                }
+            }
     }
 
     private suspend fun getTodayStats(): DailyStats {

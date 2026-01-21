@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
@@ -26,7 +27,9 @@ import androidx.core.content.ContextCompat
 import com.example.car_park.databinding.ActivityScanBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -51,7 +54,7 @@ class ScanActivity : AppCompatActivity() {
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var cameraManager: CameraManager
     private lateinit var firebaseDb: FirebaseFirestore
-    private var userId: Int = 0
+    private var userId: String = ""  // Changed to String (Firebase UID)
     private var isScanning = false
     private var currentParkingId: Int = -1
     private var camera: Camera? = null
@@ -127,13 +130,9 @@ class ScanActivity : AppCompatActivity() {
         }
     }
 
-    private fun getUserIdFromPrefs(): Int {
+    private fun getUserIdFromPrefs(): String {
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        return try {
-            sharedPref.getInt("user_id", 0)
-        } catch (e: ClassCastException) {
-            sharedPref.getString("user_id", "0")?.toIntOrNull() ?: 0
-        }
+        return sharedPref.getString("user_id", "") ?: ""
     }
 
     private fun initializeScanner() {
@@ -359,7 +358,7 @@ class ScanActivity : AppCompatActivity() {
         if (qrParts.size >= 4) {
             // New format QR code from driver
             try {
-                val driverId = qrParts[0].toInt()
+                val driverId = qrParts[0]  // Keep as String (Firebase UID)
                 val timestamp = qrParts[1].toLong()
                 val action = qrParts[2]
                 val carNumber = qrParts[3]
@@ -378,7 +377,7 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun processNewFormatQR(
-        driverId: Int,
+        driverId: String,
         timestamp: Long,
         action: String,
         carNumber: String,
@@ -391,28 +390,47 @@ class ScanActivity : AppCompatActivity() {
                 // Display scan details immediately
                 displayScanDetails(driverId, timestamp, action, carNumber)
                 
-                val sessionData = withContext(Dispatchers.IO) {
-                    when (action.lowercase()) {
-                        "entry" -> createEntrySession(driverId, carNumber, timestamp, qrData)
-                        "exit" -> createExitSession(driverId, carNumber, timestamp, qrData)
-                        else -> null
+                when (action.lowercase()) {
+                    "entry" -> {
+                        // Create new entry session
+                        val sessionData = withContext(Dispatchers.IO) {
+                            createEntrySession(driverId, carNumber, timestamp, qrData)
+                        }
+                        
+                        if (sessionData != null) {
+                            saveToFirebase(sessionData)
+                            showSuccessAnimation()
+                            showSnackbar("ENTRY recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
+                        } else {
+                            showErrorAnimation()
+                            showSnackbar("Failed to process entry", Snackbar.LENGTH_SHORT, Color.RED)
+                        }
+                    }
+                    "exit" -> {
+                        // Find and update existing entry session
+                        val updated = withContext(Dispatchers.IO) {
+                            updateExitSession(driverId, carNumber, timestamp, qrData)
+                        }
+                        
+                        if (updated) {
+                            showSuccessAnimation()
+                            showSnackbar("EXIT recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
+                        } else {
+                            showErrorAnimation()
+                            showSnackbar("No active session found to exit", Snackbar.LENGTH_SHORT, Color.RED)
+                        }
+                    }
+                    else -> {
+                        showErrorAnimation()
+                        showSnackbar("Unknown QR action: $action", Snackbar.LENGTH_SHORT, Color.RED)
                     }
                 }
                 
-                if (sessionData != null) {
-                    // Save to Firebase
-                    saveToFirebase(sessionData)
-                    showSuccessAnimation()
-                    showSnackbar("${action.uppercase()} recorded successfully", Snackbar.LENGTH_SHORT, Color.GREEN)
-                    
-                    // Reset after delay
-                    handler.postDelayed({
-                        hideResultPanel()
-                    }, 3000)
-                } else {
-                    showErrorAnimation()
-                    showSnackbar("Failed to process QR code", Snackbar.LENGTH_SHORT, Color.RED)
-                }
+                // Reset after delay
+                handler.postDelayed({
+                    hideResultPanel()
+                }, 3000)
+                
             } catch (e: Exception) {
                 e.printStackTrace()
                 showErrorAnimation()
@@ -422,7 +440,7 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun displayScanDetails(
-        driverId: Int,
+        driverId: String,
         timestamp: Long,
         action: String,
         carNumber: String
@@ -451,26 +469,27 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun createEntrySession(
-        driverId: Int,
+        driverId: String,
         carNumber: String,
         entryTime: Long,
         qrData: String
     ): Map<String, Any>? {
         return try {
-            val sessionData: Map<String, Any> = mapOf(
-                "sessionId" to "${driverId}_${entryTime}" as Any,
-                "userId" to driverId as Any,
-                "vehicleNumber" to carNumber as Any,
-                "entryTime" to entryTime as Any,
-                "exitTime" to null as Any,
-                "entryQRData" to qrData as Any,
-                "exitQRData" to null as Any,
-                "durationMinutes" to 0 as Any,
-                "charges" to 0.0 as Any,
-                "status" to "active" as Any,
-                "createdAt" to System.currentTimeMillis() as Any
+            val sessionData: Map<String, Any?> = mapOf(
+                "sessionId" to "${driverId}_${entryTime}",
+                "userId" to driverId,
+                "vehicleNumber" to carNumber,
+                "entryTime" to entryTime,
+                "exitTime" to null,
+                "entryQRData" to qrData,
+                "exitQRData" to null,
+                "durationMinutes" to 0,
+                "charges" to 0.0,
+                "status" to "active",
+                "createdAt" to System.currentTimeMillis()
             )
-            sessionData
+            @Suppress("UNCHECKED_CAST")
+            sessionData as Map<String, Any>
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -498,47 +517,71 @@ class ScanActivity : AppCompatActivity() {
             }
     }
 
+    private suspend fun updateExitSession(
+        driverId: String,
+        carNumber: String,
+        exitTime: Long,
+        exitQRData: String
+    ): Boolean {
+        return try {
+            val db = FirebaseFirestore.getInstance()
+            
+            // Find active session for this user and vehicle
+            val query = db.collection("parking_sessions")
+                .whereEqualTo("userId", driverId)
+                .whereEqualTo("vehicleNumber", carNumber)
+                .whereEqualTo("status", "active")
+                .limit(1)
+            
+            val snapshot = Tasks.await(query.get())
+            
+            if (!snapshot.isEmpty()) {
+                val doc = snapshot.documents[0]
+                val docId = doc.id
+                val entryTime = doc.getLong("entryTime") ?: 0L
+                
+                // Calculate parking duration in minutes
+                val durationMinutes = (exitTime - entryTime) / (1000 * 60)
+                
+                // Calculate parking charges (1 rupee per minute, minimum 10 rupees)
+                val chargesAmount = maxOf(10, (durationMinutes * 1).toInt())
+                
+                // Prepare update data
+                val updateData = mapOf(
+                    "exitTime" to exitTime,
+                    "exitQRData" to exitQRData,
+                    "durationMinutes" to durationMinutes,
+                    "charges" to chargesAmount,
+                    "status" to "completed",
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                
+                // Update existing document
+                Tasks.await(db.collection("parking_sessions").document(docId).update(updateData))
+                
+                // Update local database
+                updateLocalDatabase(driverId, carNumber, exitTime, durationMinutes)
+                
+                return true
+            } else {
+                Log.e("ScanActivity", "No active session found for user: $driverId, vehicle: $carNumber")
+                return false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("ScanActivity", "Error updating exit session: ${e.message}")
+            false
+        }
+    }
+    
     private fun createExitSession(
-        driverId: Int,
+        driverId: String,
         carNumber: String,
         exitTime: Long,
         qrData: String
     ): Map<String, Any>? {
-        return try {
-            // Query Firebase to find matching entry session
-            var durationMinutes = 0
-            var charges = 0.0
-            var entryTime = 0L
-            
-            // For now, calculate from a fixed rate
-            // TODO: Query Firebase for actual entry time
-            val hourlyRate = 20.0
-            val minCharges = 20.0
-            val maxDailyCharges = 200.0
-            
-            // Placeholder calculation (will be updated when we can query Firebase)
-            durationMinutes = 60 // Example: 1 hour
-            charges = minOf(
-                maxOf(durationMinutes / 60.0 * hourlyRate, minCharges),
-                maxDailyCharges
-            )
-            
-            val sessionData: Map<String, Any> = mapOf(
-                "sessionId" to "${driverId}_${exitTime}" as Any,
-                "userId" to driverId as Any,
-                "vehicleNumber" to carNumber as Any,
-                "exitTime" to exitTime as Any,
-                "exitQRData" to qrData as Any,
-                "durationMinutes" to durationMinutes as Any,
-                "charges" to charges as Any,
-                "status" to "completed" as Any,
-                "updatedAt" to System.currentTimeMillis() as Any
-            )
-            sessionData
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        // This function is deprecated - exit now uses updateExitSession instead
+        return null
     }
 
     private fun saveToFirebase(sessionData: Map<String, Any>) {
@@ -561,23 +604,49 @@ class ScanActivity : AppCompatActivity() {
                 try {
                     val vehicleNumber = sessionData["vehicleNumber"].toString()
                     val status = sessionData["status"].toString()
+                    val userId = sessionData["userId"].toString()  // Keep as String
                     
                     if (status == "active") {
                         // Entry - add to local database
                         dbHelper.addParkingEntry(
-                            sessionData["userId"].toString().toInt(),
+                            userId,
                             vehicleNumber
                         )
                     } else if (status == "completed") {
                         // Exit - update in local database
                         val charges = (sessionData["charges"] as? Number)?.toDouble() ?: 0.0
                         dbHelper.updateParkingExit(
-                            sessionData["userId"].toString().toInt().toLong(),
+                            sessionData["userId"].toString().toLong(),
                             charges
                         )
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                }
+            }
+        }
+    }
+    
+    private fun updateLocalDatabase(
+        userId: String,
+        vehicleNumber: String,
+        exitTime: Long,
+        durationMinutes: Long
+    ) {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    // Calculate charges: 1 rupee per minute, minimum 10 rupees
+                    val charges = maxOf(10.0, (durationMinutes * 1).toDouble())
+                    
+                    // Update parking exit in local database
+                    dbHelper.updateParkingExit(
+                        userId.toLongOrNull() ?: userId.hashCode().toLong(),
+                        charges
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Log.e("ScanActivity", "Error updating local database: ${e.message}")
                 }
             }
         }

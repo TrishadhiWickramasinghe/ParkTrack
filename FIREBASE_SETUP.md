@@ -33,7 +33,43 @@ This app now uses Firebase Authentication for secure login and user management.
 4. Select your preferred location
 5. Click Enable
 
-### Step 5: Sync and Build
+### Step 5: Configure Firestore Security Rules
+
+⚠️ **IMPORTANT:** The permission error you're seeing means Firestore rules need to be updated.
+
+1. In Firebase Console, go to **Firestore Database** > **Rules** tab
+2. Replace all existing rules with the following:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read/write to parking_sessions
+    match /parking_sessions/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Allow authenticated users to read/write to users collection
+    match /users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Allow authenticated users to read/write to their own profile
+    match /profiles/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Default: Allow all authenticated users
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+3. Click **"Publish"** button to apply the rules
+
+### Step 6: Sync and Build
 
 1. Place your `google-services.json` in the `app/` folder
 2. Sync Gradle files in Android Studio
@@ -44,11 +80,13 @@ This app now uses Firebase Authentication for secure login and user management.
 To create test accounts:
 
 ### Admin Account
+
 - Email: `admin@carpark.com`
 - Password: `admin123456`
 - Role: Select "Admin" when signing up
 
 ### Driver Account
+
 - Email: `driver@carpark.com`
 - Password: `driver123456`
 - Role: Select "Driver" when signing up
@@ -56,6 +94,7 @@ To create test accounts:
 ## Features
 
 ### Authentication Flow
+
 1. **Splash Screen** (MainActivity) - Checks auth state
 2. **Role Selection** - Choose Admin or Driver
 3. **Login** - Email/password authentication
@@ -63,6 +102,7 @@ To create test accounts:
 5. **Dashboard** - Role-based navigation
 
 ### Security Features
+
 - Firebase Authentication for secure login
 - Password reset via email
 - Session management
@@ -70,20 +110,38 @@ To create test accounts:
 
 ## Troubleshooting
 
+### Firestore Permission Error
+
+**Error:** `PERMISSION_DENIED: Missing or insufficient permissions`
+**Solution:**
+
+1. Go to Firebase Console > Firestore Database > Rules
+2. Replace rules with the security rules shown in Step 5 above
+3. Click "Publish" to apply
+4. Wait 30 seconds for rules to propagate
+5. Try scanning QR code again
+
+This error occurs when the Firestore security rules don't allow writes to the `parking_sessions` collection.
+
 ### google-services.json missing
+
 **Error:** `File google-services.json is missing`
 **Solution:** Download from Firebase Console and place in `app/` directory
 
 ### Authentication failed
+
 **Error:** `Authentication failed: [CONFIGURATION_NOT_FOUND]`
-**Solution:** 
+**Solution:**
+
 1. Ensure google-services.json is in the correct location
 2. Verify package name matches in Firebase Console
 3. Sync Gradle files
 4. Clean and rebuild project
 
 ### Build errors
+
 **Solution:**
+
 ```bash
 ./gradlew clean
 ./gradlew build
@@ -106,5 +164,6 @@ To create test accounts:
 ## Support
 
 For Firebase setup issues, visit:
+
 - [Firebase Android Setup](https://firebase.google.com/docs/android/setup)
 - [Firebase Auth Documentation](https://firebase.google.com/docs/auth/android/start)

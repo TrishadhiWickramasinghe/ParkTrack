@@ -17,16 +17,21 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val scope = CoroutineScope(Dispatchers.Main)
     private var selectedRole: String? = null
+    private lateinit var auth: FirebaseAuth
+    private lateinit var firebaseDb: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +40,10 @@ class LoginActivity : AppCompatActivity() {
 
         // Get the selected role from intent
         selectedRole = intent.getStringExtra("role")
+
+        // Initialize Firebase
+        auth = FirebaseAuth.getInstance()
+        firebaseDb = FirebaseFirestore.getInstance()
 
         // Set status bar color
         window.statusBarColor = ContextCompat.getColor(this, R.color.dark_green)
@@ -182,19 +191,17 @@ class LoginActivity : AppCompatActivity() {
         if (validateInputs(email, password)) {
             showLoading(true)
 
-            scope.launch {
-                // Simulate network delay
-                delay(1500)
-
-                showLoading(false)
-
-                // Check credentials
-                if (isValidCredentials(email, password)) {
+            // Authenticate with Firebase
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener {
+                    showLoading(false)
                     onLoginSuccess()
-                } else {
+                }
+                .addOnFailureListener { exception ->
+                    showLoading(false)
+                    exception.printStackTrace()
                     onLoginFailure()
                 }
-            }
         }
     }
 
@@ -241,21 +248,81 @@ class LoginActivity : AppCompatActivity() {
                 // Show success message
                 showSnackbar("Login successful!", Snackbar.LENGTH_SHORT, Color.GREEN)
 
-                // Save login state and role
-                val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-                sharedPref.edit().apply {
-                    putBoolean("is_logged_in", true)
-                    putString("user_role", selectedRole ?: "driver")
-                    apply()
-                }
-
-                // Navigate to appropriate dashboard after delay
-                scope.launch {
-                    delay(500)
-                    navigateToDashboard()
-                }
+                // Fetch user data from Firebase and save to SharedPreferences
+                fetchAndSaveUserData()
             }
             .start()
+    }
+
+    private fun fetchAndSaveUserData() {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            firebaseDb.collection("users")
+                .document(currentUser.uid)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val userData = document.data ?: run {
+                            // If no data, save minimal info and continue
+                            saveMinimalUserData(currentUser.uid)
+                            return@addOnSuccessListener
+                        }
+                        
+                        // Extract user data - use Firebase UID as user_id
+                        val firebaseUid = currentUser.uid
+                        val userName = userData["name"]?.toString() ?: "User"
+                        val carNumber = userData["vehicle_num"]?.toString() ?: "Not set"
+                        
+                        // Save to SharedPreferences
+                        val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                        sharedPref.edit().apply {
+                            putBoolean("is_logged_in", true)
+                            putString("user_role", selectedRole ?: "driver")
+                            putString("user_id", firebaseUid)  // Use Firebase UID directly
+                            putString("user_name", userName)
+                            putString("car_number", carNumber)
+                            putString("firebase_uid", firebaseUid)
+                            apply()
+                        }
+                        
+                        // Navigate to dashboard
+                        scope.launch {
+                            delay(500)
+                            navigateToDashboard()
+                        }
+                    } else {
+                        // User document doesn't exist, save minimal data
+                        saveMinimalUserData(currentUser.uid)
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    exception.printStackTrace()
+                    // Save minimal data and continue
+                    saveMinimalUserData(currentUser.uid)
+                }
+        } else {
+            showSnackbar("Authentication failed. Please try again.", Snackbar.LENGTH_LONG, Color.RED)
+            showLoading(false)
+        }
+    }
+
+    private fun saveMinimalUserData(firebaseUid: String) {
+        // Save minimal user data when Firestore query fails
+        val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        sharedPref.edit().apply {
+            putBoolean("is_logged_in", true)
+            putString("user_role", selectedRole ?: "driver")
+            putString("user_id", firebaseUid)
+            putString("user_name", "User")
+            putString("car_number", "Not set")
+            putString("firebase_uid", firebaseUid)
+            apply()
+        }
+        
+        scope.launch {
+            delay(500)
+            navigateToDashboard()
+        }
     }
 
     private fun onLoginFailure() {

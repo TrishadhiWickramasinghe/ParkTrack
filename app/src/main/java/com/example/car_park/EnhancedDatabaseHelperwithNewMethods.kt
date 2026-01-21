@@ -252,7 +252,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Method to add a parking entry
-    fun addParkingEntry(userId: Int, carNumber: String): Long {
+    fun addParkingEntry(userId: String, carNumber: String): Long {
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COL_USER_ID, userId)
@@ -291,13 +291,13 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Method to get current parking for a user
-    fun getCurrentParking(userId: Int): Cursor {
+    fun getCurrentParking(userId: String): Cursor {
         val db = readableDatabase
         return db.query(
             TABLE_PARKING,
             null,
             "$COL_USER_ID = ? AND $COL_STATUS = ?",
-            arrayOf(userId.toString(), "parked"),
+            arrayOf(userId, "parked"),
             null, null,
             "$COL_ENTRY_TIME DESC",
             "1"
@@ -326,7 +326,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Method to get daily parking stats (returns DailyParkingData)
-    fun getDailyParkingStats(userId: Int, date: String): DailyParkingData {
+    fun getDailyParkingStats(userId: String, date: String): DailyParkingData {
         val db = readableDatabase
         val cursor = db.rawQuery(
             """
@@ -336,7 +336,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             FROM $TABLE_PARKING
             WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) = ?
             """.trimIndent(),
-            arrayOf(userId.toString(), date)
+            arrayOf(userId, date)
         )
 
         var totalMinutes = 0
@@ -350,7 +350,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Method to get monthly parking data (returns Cursor for lists)
-    fun getMonthlyParkingData(userId: Int, month: Int, year: Int): Cursor {
+    fun getMonthlyParkingData(userId: String, month: Int, year: Int): Cursor {
         val db = readableDatabase
         return db.rawQuery(
             """
@@ -368,12 +368,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 AND strftime('%Y', $COL_ENTRY_TIME) = ?
             ORDER BY $COL_ENTRY_TIME DESC
             """.trimIndent(),
-            arrayOf(userId.toString(), month.toString().padStart(2, '0'), year.toString())
+            arrayOf(userId, month.toString().padStart(2, '0'), year.toString())
         )
     }
 
     // Method to get monthly parking stats (returns MonthlyParkingData)
-    fun getMonthlyParkingStats(userId: Int, month: Int, year: Int): MonthlyParkingData {
+    fun getMonthlyParkingStats(userId: String, month: Int, year: Int): MonthlyParkingData {
         val db = readableDatabase
         val cursor = db.rawQuery(
             """
@@ -385,7 +385,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 AND strftime('%m', $COL_ENTRY_TIME) = ?
                 AND strftime('%Y', $COL_ENTRY_TIME) = ?
             """.trimIndent(),
-            arrayOf(userId.toString(), month.toString().padStart(2, '0'), year.toString())
+            arrayOf(userId, month.toString().padStart(2, '0'), year.toString())
         )
 
         var totalMinutes = 0
@@ -548,20 +548,20 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Get all parking history for a user
-    fun getParkingHistory(userId: Int): Cursor {
+    fun getParkingHistory(userId: String): Cursor {
         val db = readableDatabase
         return db.query(
             TABLE_PARKING,
             null,
             "$COL_USER_ID = ?",
-            arrayOf(userId.toString()),
+            arrayOf(userId),
             null, null,
             "$COL_ENTRY_TIME DESC"
         )
     }
 
     // Get parking history by date
-    fun getParkingHistoryByDate(userId: Int, date: String): Cursor {
+    fun getParkingHistoryByDate(userId: String, date: String): Cursor {
         val db = readableDatabase
         return db.rawQuery(
             """
@@ -570,12 +570,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) = ?
             ORDER BY $COL_ENTRY_TIME DESC
             """.trimIndent(),
-            arrayOf(userId.toString(), date)
+            arrayOf(userId, date)
         )
     }
 
     // Get parking history by date range
-    fun getParkingHistoryByDateRange(userId: Int, startDate: String, endDate: String): Cursor {
+    fun getParkingHistoryByDateRange(userId: String, startDate: String, endDate: String): Cursor {
         val db = readableDatabase
         return db.rawQuery(
             """
@@ -584,7 +584,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             WHERE $COL_USER_ID = ? AND DATE($COL_ENTRY_TIME) BETWEEN ? AND ?
             ORDER BY $COL_ENTRY_TIME DESC
             """.trimIndent(),
-            arrayOf(userId.toString(), startDate, endDate)
+            arrayOf(userId, startDate, endDate)
         )
     }
 }

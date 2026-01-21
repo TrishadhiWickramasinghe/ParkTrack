@@ -27,7 +27,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMonthlyPaymentBinding
     private lateinit var dbHelper: DatabaseHelper
-    private var userId: Int = 0
+    private var userId: String = ""  // Changed to String
     private val scope = CoroutineScope(Dispatchers.Main)
     private var selectedMonthYear: String = ""
 
@@ -52,13 +52,9 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         loadMonthlyDataWithAnimation()
     }
 
-    private fun getUserIdFromPrefs(): Int {
+    private fun getUserIdFromPrefs(): String {
         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        return try {
-            sharedPref.getInt("user_id", 0)
-        } catch (e: ClassCastException) {
-            sharedPref.getString("user_id", "0")?.toIntOrNull() ?: 0
-        }
+        return sharedPref.getString("user_id", "") ?: ""
     }
 
     private fun setupToolbar() {
