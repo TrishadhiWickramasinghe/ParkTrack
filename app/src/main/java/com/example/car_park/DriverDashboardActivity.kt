@@ -215,20 +215,41 @@ class DriverDashboardActivity : AppCompatActivity() {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val today = sdf.format(Date())
             val data = dbHelper.getDailyParkingStats(userId, today)
-            // Convert DailyParkingData to DailyStats
+            
+            var totalMinutes = 0
+            var totalAmount = 0.0
+            var entryCount = 0
+            
+            if (data != null) {
+                if (data.moveToFirst()) {
+                    do {
+                        try {
+                            val duration = data.getInt(data.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PARKING_DURATION))
+                            val charges = data.getDouble(data.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PARKING_CHARGES))
+                            totalMinutes += duration
+                            totalAmount += charges
+                            entryCount++
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    } while (data.moveToNext())
+                }
+                data.close()
+            }
+            
             DailyStats(
-                totalMinutes = data.totalMinutes,
-                totalAmount = data.totalAmount,
-                entryCount = 0 // Default to 0 as it's not provided
+                totalMinutes = totalMinutes,
+                totalAmount = totalAmount,
+                entryCount = entryCount
             )
         }
     }
 
-    private fun updateParkingStatus(cursor: android.database.Cursor) {
-        if (cursor.moveToFirst()) {
+    private fun updateParkingStatus(cursor: android.database.Cursor?) {
+        if (cursor != null && cursor.moveToFirst()) {
             // Vehicle is currently parked
             isParked = true
-            parkingEntryTime = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ENTRY_TIME))
+            parkingEntryTime = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PARKING_ENTRY_TIME))
 
             // Update UI for parked status
             binding.tvParkingStatus.text = "PARKED"

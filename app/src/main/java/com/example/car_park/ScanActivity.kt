@@ -732,13 +732,13 @@ class ScanActivity : AppCompatActivity() {
                     dbHelper.getCurrentParkingIdForVehicle(carNumber)
                 }
                 
-                if (parkingId != -1L) {
+                if (parkingId != -1) {
                     val amount = withContext(Dispatchers.IO) {
-                        calculateParkingAmount(parkingId)
+                        calculateParkingAmount(parkingId.toLong())
                     }
                     
                     withContext(Dispatchers.IO) {
-                        dbHelper.updateParkingExit(parkingId, amount)
+                        dbHelper.updateParkingExit(parkingId.toLong(), amount)
                     }
 
                     // showSuccessAnimation("VEHICLE EXITED", R.drawable.ic_exit, Color.parseColor("#FF9800"))
@@ -765,16 +765,19 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun calculateParkingAmount(parkingId: Long): Double {
-        val cursor = dbHelper.getParkingDuration(parkingId)
+        val cursor = dbHelper.getParkingDuration(parkingId.toInt())
         var amount = 0.0
 
-        if (cursor.moveToFirst()) {
-            val duration = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_DURATION))
-            // Calculate amount: ₹20 per hour, minimum ₹20
-            val hours = duration / 60.0
-            amount = maxOf(hours * 20.0, 20.0)
+        if (cursor != null && cursor.moveToFirst()) {
+            try {
+                val duration = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PARKING_DURATION))
+                // Calculate amount: ₹20 per hour, minimum ₹20
+                val hours = duration / 60.0
+                amount = maxOf(hours * 20.0, 20.0)
+            } finally {
+                cursor.close()
+            }
         }
-        cursor.close()
         return amount
     }
 
