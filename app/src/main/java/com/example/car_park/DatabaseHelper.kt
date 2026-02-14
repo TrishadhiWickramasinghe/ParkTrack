@@ -63,6 +63,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         const val COLUMN_RECEIPT_USER_ID = "user_id"
         const val COLUMN_RECEIPT_AMOUNT = "amount"
         const val COLUMN_RECEIPT_GENERATED_AT = "generated_at"
+
+        // Aliases for COL_* constants used in legacy code
+        const val COL_ID = COLUMN_PARKING_ID
+        const val COL_NAME = COLUMN_USER_NAME
+        const val COL_CAR_NUMBER = COLUMN_PARKING_VEHICLE_NUMBER
+        const val COL_ENTRY_TIME = COLUMN_PARKING_ENTRY_TIME
+        const val COL_EXIT_TIME = COLUMN_PARKING_EXIT_TIME
+        const val COL_DURATION = COLUMN_PARKING_DURATION
+        const val COL_AMOUNT = COLUMN_PARKING_CHARGES
+        const val COL_STATUS = COLUMN_PARKING_STATUS
+        const val COL_PHONE = COLUMN_USER_PHONE
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -566,5 +577,242 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         db.delete(TABLE_PARKING, null, null)
         db.delete(TABLE_NOTIFICATIONS, null, null)
         db.delete(TABLE_RECEIPTS, null, null)
+    }
+
+    // ============ FILTER AND ADMIN METHODS ============
+
+    fun getFilteredParkingLogs(
+        vehicleNumber: String? = null,
+        startDate: String? = null,
+        endDate: String? = null,
+        status: String? = null
+    ): Cursor? {
+        val db = readableDatabase
+        var whereClause = ""
+        val whereArgs = mutableListOf<String>()
+
+        if (!vehicleNumber.isNullOrEmpty()) {
+            whereClause += "$COLUMN_PARKING_VEHICLE_NUMBER = ?"
+            whereArgs.add(vehicleNumber)
+        }
+
+        if (!startDate.isNullOrEmpty()) {
+            if (whereClause.isNotEmpty()) whereClause += " AND "
+            whereClause += "$COLUMN_PARKING_ENTRY_TIME >= ?"
+            whereArgs.add(startDate)
+        }
+
+        if (!endDate.isNullOrEmpty()) {
+            if (whereClause.isNotEmpty()) whereClause += " AND "
+            whereClause += "$COLUMN_PARKING_ENTRY_TIME <= ?"
+            whereArgs.add(endDate)
+        }
+
+        if (!status.isNullOrEmpty()) {
+            if (whereClause.isNotEmpty()) whereClause += " AND "
+            whereClause += "$COLUMN_PARKING_STATUS = ?"
+            whereArgs.add(status)
+        }
+
+        return db.query(
+            TABLE_PARKING,
+            null,
+            if (whereClause.isEmpty()) null else whereClause,
+            if (whereArgs.isEmpty()) null else whereArgs.toTypedArray(),
+            null,
+            null,
+            "$COLUMN_PARKING_ENTRY_TIME DESC"
+        )
+    }
+
+    fun getAllVehicleNumbers(): List<String> {
+        val db = readableDatabase
+        val vehicleNumbers = mutableListOf<String>()
+        val cursor = db.query(
+            TABLE_PARKING,
+            arrayOf("DISTINCT $COLUMN_PARKING_VEHICLE_NUMBER"),
+            null,
+            null,
+            null,
+            null,
+            null
+        )
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                vehicleNumbers.add(cursor.getString(0))
+            }
+            cursor.close()
+        }
+        return vehicleNumbers
+    }
+
+    fun getAdminDetails(adminId: Long): Cursor? {
+        val db = readableDatabase
+        return db.query(
+            TABLE_USERS,
+            null,
+            "$COLUMN_USER_ID = ?",
+            arrayOf(adminId.toString()),
+            null,
+            null,
+            null
+        )
+    }
+
+    fun verifyPassword(userId: Long, password: String): Boolean {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_USERS,
+            arrayOf(COLUMN_USER_PASSWORD),
+            "$COLUMN_USER_ID = ?",
+            arrayOf(userId.toString()),
+            null,
+            null,
+            null
+        )
+
+        val result = if (cursor != null && cursor.moveToFirst()) {
+            val storedPassword = cursor.getString(0)
+            cursor.close()
+            storedPassword == password // In production, use proper hashing
+        } else {
+            false
+        }
+        cursor?.close()
+        return result
+    }
+
+    fun updatePassword(userId: Long, newPassword: String): Boolean {
+        val db = writableDatabase
+        val contentValues = android.content.ContentValues()
+        contentValues.put(COLUMN_USER_PASSWORD, newPassword)
+        val result = db.update(
+            TABLE_USERS,
+            contentValues,
+            "$COLUMN_USER_ID = ?",
+            arrayOf(userId.toString())
+        )
+        return result > 0
+    }
+
+    fun getDailyIncomeForLast7Days(): Map<String, Double> {
+        val db = readableDatabase
+        val incomeMap = mutableMapOf<String, Double>()
+        val calendar = Calendar.getInstance()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        repeat(7) {
+            val date = dateFormat.format(calendar.time)
+            val cursor = db.query(
+                TABLE_PARKING,
+                arrayOf("SUM($COLUMN_PARKING_CHARGES) as total"),
+                "DATE($COLUMN_PARKING_ENTRY_TIME) = ? AND $COLUMN_PARKING_STATUS = 'completed'",
+                arrayOf(date),
+                null,
+                null,
+                null
+            )
+
+            val income = if (cursor != null && cursor.moveToFirst()) {
+                val total = cursor.getDouble(0)
+                cursor.close()
+                total
+            } else {
+                0.0
+            }
+            incomeMap[date] = income
+            calendar.add(Calendar.DAY_OF_MONTH, -1)
+        }
+
+        return incomeMap
+    }
+
+    fun getMonthlyIncomeForLast6Months(): Map<String, Double> {
+        val db = readableDatabase
+        val incomeMap = mutableMapOf<String, Double>()
+        val calendar = Calendar.getInstance()
+        val dateFormat = SimpleDateFormat("yyyy-MM", Locale.getDefault())
+
+        repeat(6) {
+            val month = dateFormat.format(calendar.time)
+            val cursor = db.query(
+                TABLE_PARKING,
+                arrayOf("SUM($COLUMN_PARKING_CHARGES) as total"),
+                "strftime('%Y-%m', $COLUMN_PARKING_ENTRY_TIME) = ? AND $COLUMN_PARKING_STATUS = 'completed'",
+                arrayOf(month),
+                null,
+                null,
+                null
+            )
+
+            val income = if (cursor != null && cursor.moveToFirst()) {
+                val total = cursor.getDouble(0)
+                cursor.close()
+                total
+            } else {
+                0.0
+            }
+            incomeMap[month] = income
+            calendar.add(Calendar.MONTH, -1)
+        }
+
+        return incomeMap
+    }
+
+    fun getParkingCountByHour(): Map<Int, Int> {
+        val db = readableDatabase
+        val countMap = mutableMapOf<Int, Int>()
+        
+        for (hour in 0..23) {
+            val cursor = db.query(
+                TABLE_PARKING,
+                arrayOf("COUNT(*) as count"),
+                "strftime('%H', $COLUMN_PARKING_ENTRY_TIME) = ?",
+                arrayOf(String.format("%02d", hour)),
+                null,
+                null,
+                null
+            )
+
+            val count = if (cursor != null && cursor.moveToFirst()) {
+                val c = cursor.getInt(0)
+                cursor.close()
+                c
+            } else {
+                0
+            }
+            countMap[hour] = count
+        }
+
+        return countMap
+    }
+
+    fun getMonthlyParkingStats(year: Int, month: Int): Map<String, Any> {
+        val db = readableDatabase
+        val yearMonth = String.format("%04d-%02d", year, month)
+        
+        val cursor = db.query(
+            TABLE_PARKING,
+            arrayOf(
+                "COUNT(*) as totalSessions",
+                "SUM($COLUMN_PARKING_DURATION) as totalMinutes",
+                "SUM($COLUMN_PARKING_CHARGES) as totalAmount"
+            ),
+            "strftime('%Y-%m', $COLUMN_PARKING_ENTRY_TIME) = ?",
+            arrayOf(yearMonth),
+            null,
+            null,
+            null
+        )
+
+        val stats = mutableMapOf<String, Any>()
+        if (cursor != null && cursor.moveToFirst()) {
+            stats["totalSessions"] = cursor.getInt(0)
+            stats["totalMinutes"] = cursor.getInt(1)
+            stats["totalAmount"] = cursor.getDouble(2)
+            cursor.close()
+        }
+        return stats
     }
 }

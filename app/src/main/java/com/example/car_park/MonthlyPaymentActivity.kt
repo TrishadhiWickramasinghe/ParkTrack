@@ -142,14 +142,15 @@ class MonthlyPaymentActivity : AppCompatActivity() {
 
                 val monthlyData = withContext(Dispatchers.IO) {
                     val (month, year) = parseMonthYear(selectedMonthYear)
-                    dbHelper.getMonthlyParkingStats(userId, month, year)
+                    dbHelper.getMonthlyParkingStats(year, month)
                 }
 
                 // Update UI with animations
                 updateUIWithData(monthlyData)
 
                 // Show/hide empty state
-                if (monthlyData.totalHours > 0) {
+                val totalMinutes = (monthlyData["totalMinutes"] as? Int)?.toLong() ?: 0L
+                if (totalMinutes > 0) {
                     showSummaryWithAnimation()
                 } else {
                     showEmptyStateWithAnimation()
@@ -164,22 +165,28 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateUIWithData(data: MonthlyParkingData) {
+    private fun updateUIWithData(data: Map<String, Any>) {
         // Update month with animation
         animateTextChange(binding.tvMonth, selectedMonthYear)
 
+        // Calculate total hours from minutes
+        val totalMinutes = (data["totalMinutes"] as? Int) ?: 0
+        val totalHours = totalMinutes / 60
+        val totalAmount = (data["totalAmount"] as? Double) ?: 0.0
+
         // Update total hours with count animation
-        animateCount(binding.tvTotalHours, 0, data.totalHours.toInt()) { value ->
+        animateCount(binding.tvTotalHours, 0, totalHours) { value ->
             "$value hours"
         }
 
         // Update total amount with count animation
-        animateCount(binding.tvTotalAmount, 0.0, data.totalAmount, "₹") { value ->
+        animateCount(binding.tvTotalAmount, 0.0, totalAmount, "₹") { value ->
             String.format("₹%.2f", value)
         }
 
-        // Update payment status
-        updatePaymentStatus(data.paymentStatus)
+        // Determine payment status based on total amount
+        val paymentStatus = if (totalAmount > 0) "pending" else "paid"
+        updatePaymentStatus(paymentStatus)
     }
 
     private fun updatePaymentStatus(status: String) {
@@ -187,7 +194,7 @@ class MonthlyPaymentActivity : AppCompatActivity() {
 
         val (statusColor, buttonText, isEnabled) = when (status.lowercase()) {
             "paid" -> Triple(R.color.green, "PAID", false)
-            "pending" -> Triple(R.color.orange, "PAY NOW", true)
+            "pending" -> Triple(R.color.warning_orange, "PAY NOW", true)
             "overdue" -> Triple(R.color.red, "PAY NOW", true)
             else -> Triple(R.color.gray, "PAY NOW", true)
         }

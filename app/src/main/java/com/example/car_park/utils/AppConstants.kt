@@ -108,6 +108,20 @@ object AppConstants {
     const val CHANNEL_ID_PAYMENT = "payment_notifications"
     const val CHANNEL_ID_ADMIN = "admin_notifications"
     
+    // Firestore Field Names
+    const val FIELD_SESSION_ID = "sessionId"
+    const val FIELD_USER_ID = "userId"
+    const val FIELD_VEHICLE_NUMBER = "vehicleNumber"
+    const val FIELD_ENTRY_TIME = "entryTime"
+    const val FIELD_EXIT_TIME = "exitTime"
+    const val FIELD_STATUS = "status"
+    const val FIELD_CHARGES = "charges"
+    const val FIELD_CREATED_AT = "createdAt"
+    const val FIELD_UPDATED_AT = "updatedAt"
+    const val FIELD_ENTRY_QR_DATA = "entryQRData"
+    const val FIELD_EXIT_QR_DATA = "exitQRData"
+    const val FIELD_DURATION_MINUTES = "durationMinutes"
+    
     // Error Messages
     const val ERROR_NO_INTERNET = "No internet connection"
     const val ERROR_INVALID_QR = "Invalid QR code format"

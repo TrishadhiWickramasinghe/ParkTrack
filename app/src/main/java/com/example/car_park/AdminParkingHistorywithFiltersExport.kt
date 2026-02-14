@@ -194,7 +194,7 @@ class AdminParkingLogsActivity : AppCompatActivity() {
     private suspend fun loadParkingLogsFromDB(): List<AdminParkingRecord> {
         return withContext(Dispatchers.IO) {
             val cursor = dbHelper.getFilteredParkingLogs(selectedDate, selectedVehicle)
-            parseCursorToRecords(cursor)
+            parseCursorToRecords(cursor!!)
         }
     }
 

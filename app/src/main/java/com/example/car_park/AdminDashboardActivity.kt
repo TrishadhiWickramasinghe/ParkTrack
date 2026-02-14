@@ -124,7 +124,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_reports -> {
-                    startActivity(Intent(this, ReportsActivity::class.java))
+                    startActivity(Intent(this, EnhancedReportsActivity::class.java))
                     finish()
                     true
                 }
@@ -189,9 +189,9 @@ class AdminDashboardActivity : AppCompatActivity() {
     private suspend fun loadDashboardStatsFromDB(): DashboardStats {
         return withContext(Dispatchers.IO) {
             val parkedVehicles = dbHelper.getCurrentParkedVehiclesCount()
-            val todayVehicles = dbHelper.getTodaysVehiclesCount()
+            val todayVehicles = 0 //TODO: dbHelper.getTodaysVehiclesCount()
             val todayIncome = dbHelper.getTodaysIncome()
-            val monthlyIncome = dbHelper.getMonthlyIncome()
+            val monthlyIncome = 0.0 //TODO: dbHelper.getMonthlyIncome()
 
             DashboardStats(
                 parkedVehicles = parkedVehicles,
@@ -253,22 +253,17 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private fun updateAvailabilityStatus(percent: Int) {
         val (statusText, colorRes) = when {
-            percent <= 10 -> Pair("FULL", R.color.red)
-            percent <= 30 -> Pair("CRITICAL", R.color.orange)
-            percent <= 50 -> Pair("LIMITED", R.color.yellow)
-            else -> Pair("AVAILABLE", R.color.green)
+            percent >= 75 -> "High Availability" to android.R.color.holo_green_dark
+            percent >= 50 -> "Good Availability" to android.R.color.holo_green_light
+            percent >= 25 -> "Limited Availability" to android.R.color.holo_orange_light
+            else -> "Low Availability" to android.R.color.holo_red_light
         }
-
+        
         binding.tvAvailabilityStatus.text = statusText
         binding.tvAvailabilityStatus.setTextColor(ContextCompat.getColor(this, colorRes))
 
         // Also update progress bar color based on status
-        val progressColor = when {
-            percent <= 10 -> R.color.red
-            percent <= 30 -> R.color.orange
-            percent <= 50 -> R.color.yellow
-            else -> R.color.green
-        }
+        val progressColor = colorRes
         binding.progressAvailability.progressTintList =
             android.content.res.ColorStateList.valueOf(ContextCompat.getColor(this, progressColor))
     }

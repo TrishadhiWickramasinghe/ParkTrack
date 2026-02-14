@@ -293,7 +293,7 @@ class DriverDashboardActivity : AppCompatActivity() {
             // Stop timer
             stopParkingTimer()
         }
-        cursor.close()
+        cursor?.close()
     }
 
     private fun updateParkingDuration() {

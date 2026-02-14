@@ -140,20 +140,22 @@ class AdminSettingsActivity : AppCompatActivity() {
             val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
             val adminName = sharedPref.getString("user_name", "Administrator") ?: "Administrator"
             val adminEmail = sharedPref.getString("user_email", "admin@example.com") ?: "admin@example.com"
+            val adminIdStr = sharedPref.getString("user_id", "0") ?: "0"
+            val adminId = adminIdStr.toLongOrNull() ?: 0L
 
             var adminPhone = "Not available"
             var memberSince = "Member since: N/A"
 
             // Load additional details from database
-            val cursor = dbHelper.getAdminDetails()
-            if (cursor.moveToFirst()) {
+            val cursor = dbHelper.getAdminDetails(adminId)
+            if (cursor?.moveToFirst() == true) {
                 adminPhone = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_PHONE))
                     ?: "Not available"
 
                 val createdAt = cursor.getString(cursor.getColumnIndexOrThrow("created_at"))
                 memberSince = formatMemberSince(createdAt)
             }
-            cursor.close()
+            cursor?.close()
 
             Quadruple(adminName, adminEmail, adminPhone, memberSince)
         }
