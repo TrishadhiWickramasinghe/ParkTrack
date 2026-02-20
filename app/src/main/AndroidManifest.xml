@@ -62,6 +62,8 @@
         <activity android:name=".ReportsActivity" android:exported="false" />
         <activity android:name=".RatesManagementActivity" android:exported="false" />
         <activity android:name=".NotificationSettingsActivity" android:exported="false" />
+        <activity android:name=".PaymentAndSubscriptionActivity" android:exported="false" />
+        <activity android:name=".AdminAnalyticsActivity" android:exported="false" />
 
     </application>
 
