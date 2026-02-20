@@ -239,8 +239,8 @@ class AdminSettingsActivity : AppCompatActivity() {
                         sharedPref.getString("user_id", "0")?.toIntOrNull() ?: 0
                     }
 
-                    if (dbHelper.verifyPassword(userId, current)) {
-                        dbHelper.updatePassword(userId, new)
+                    if (dbHelper.verifyPassword(userId.toLong(), current)) {
+                        dbHelper.updatePassword(userId.toLong(), new)
                         true
                     } else {
                         false
