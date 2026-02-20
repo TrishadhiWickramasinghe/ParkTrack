@@ -306,10 +306,10 @@ class MonthlyPaymentActivity : AppCompatActivity() {
 
                 val (month, year) = parseMonthYear(selectedMonthYear)
                 val monthlyData = withContext(Dispatchers.IO) {
-                    dbHelper.getMonthlyParkingStats(userId, month, year)
+                    dbHelper.getMonthlyParkingStats(year, month)
                 }
 
-                if (monthlyData.totalHours > 0) {
+                if ((monthlyData["totalMinutes"] as? Int) ?: 0 > 0) {
                     withContext(Dispatchers.IO) {
                         generatePdfSummary(monthlyData, selectedMonthYear)
                     }
@@ -325,9 +325,13 @@ class MonthlyPaymentActivity : AppCompatActivity() {
         }
     }
 
-    private fun generatePdfSummary(data: MonthlyParkingData, monthYear: String) {
+    private fun generatePdfSummary(data: Map<String, Any>, monthYear: String) {
         // Implement PDF generation using iText or other library
         // Example: Create PDF with monthly summary
+        val totalSessions = (data["totalSessions"] as? Int) ?: 0
+        val totalMinutes = (data["totalMinutes"] as? Int) ?: 0
+        val totalAmount = (data["totalAmount"] as? Double) ?: 0.0
+        // Generate PDF with this data
     }
 
     private fun processPayment() {
@@ -335,11 +339,11 @@ class MonthlyPaymentActivity : AppCompatActivity() {
             try {
                 val (month, year) = parseMonthYear(selectedMonthYear)
                 val monthlyData = withContext(Dispatchers.IO) {
-                    dbHelper.getMonthlyParkingStats(userId, month, year)
+                    dbHelper.getMonthlyParkingStats(year, month)
                 }
 
-                if (monthlyData.totalAmount > 0) {
-                    showPaymentDialog(monthlyData.totalAmount, selectedMonthYear)
+                if ((monthlyData["totalAmount"] as? Double) ?: 0.0 > 0) {
+                    showPaymentDialog((monthlyData["totalAmount"] as? Double) ?: 0.0, selectedMonthYear)
                 } else {
                     showSnackbar("No amount due for this month", Snackbar.LENGTH_SHORT, Color.YELLOW)
                 }

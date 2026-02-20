@@ -7,8 +7,10 @@
     <color name="dark_green">#00695C</color>
     <color name="white">#FFFFFF</color>
     <color name="light_green">#C8E6C9</color>
+    <color name="light_orange">#FFE0B2</color>
     <color name="light_gray">#F5F5F5</color>
     <color name="gray">#9E9E9E</color>
+    <color name="orange">#FF9800</color>
     <color name="warning_orange">#FF6F00</color>
     <color name="green">#4CAF50</color>
     <color name="red">#F44336</color>
